@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ru" data-mode="work">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>work | life</title>
+<meta name="description" content="Евгений Константинов — бигтех и Go в Авито. Один сайт, два режима: work и life.">
+<link rel="icon" type="image/png" href="assets/favicon-src.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Handjet:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="flash" id="flash" aria-hidden="true"></div>
+
+<header class="bar" id="bar">
+  <a class="bar__brand" href="#top" aria-label="В начало">
+    <svg class="logo" width="24" height="24" viewBox="0 0 8 8" aria-label="Пиксельный знак work / life" role="img" shape-rendering="crispEdges">
+      <rect x="0" y="0" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1"/>
+      <rect x="1" y="1" width="3" height="6" fill="currentColor"/>
+      <rect x="4" y="1" width="1" height="1" fill="currentColor"/>
+      <rect x="5" y="2" width="1" height="1" fill="currentColor"/>
+      <rect x="4" y="3" width="1" height="1" fill="currentColor"/>
+      <rect x="6" y="1" width="1" height="1" fill="currentColor"/>
+      <rect x="5" y="4" width="1" height="1" fill="currentColor"/>
+      <rect x="6" y="5" width="1" height="1" fill="currentColor"/>
+      <rect x="4" y="5" width="1" height="1" fill="currentColor"/>
+    </svg>
+    <span class="bar__prompt">Evgeniy<span class="dim">@</span><span class="bar__host">work</span><span class="dim">:~$</span></span>
+  </a>
+
+  <div class="switch" role="group" aria-label="Режим: work или life">
+    <button type="button" class="switch__opt" data-mode-btn="work" aria-pressed="true">work</button>
+    <button type="button" class="switch__opt" data-mode-btn="life" aria-pressed="false">life</button>
+    <span class="switch__thumb" aria-hidden="true"></span>
+  </div>
+
+  <nav class="bar__nav" aria-label="Разделы">
+    <a href="#whoami">whoami</a>
+    <a href="#skills">skills</a>
+    <a href="#story"><span class="onlyWork">history</span><span class="onlyLife">route</span></a>
+    <a href="#links">links</a>
+  </nav>
+
+</header>
+
+<div class="progress" aria-hidden="true"><span id="progressFill"></span></div>
+
+<main id="top">
+
+  <!-- ═══ HERO ═══ -->
+  <section class="sect hero">
+    <div class="wrap hero__grid">
+      <div class="hero__text">
+        <p class="boot" aria-hidden="true">
+          <span class="boot__line">&gt; init life.sys ......... ok</span>
+          <span class="boot__line">&gt; mount <span class="onlyWork">/work</span><span class="onlyLife">/life</span> ........ ok</span>
+          <span class="boot__line">&gt; run whoami</span>
+        </p>
+
+        <h1 class="hero__name">Евгений<br><span class="hero__name-2">Константинов</span></h1>
+
+        <p class="hero__tag onlyWork">
+          Пишу арх.дизайн больших систем, реализую их на Go.
+          Считаю <strong>показы и клики</strong>.
+          Запускаю новый рекламный продукт в Авито.
+        </p>
+        <p class="hero__tag onlyLife">
+          Пишу и снимаю на Fujifilm маленькие истории из жизни.
+          Считаю <strong>города и километры</strong> — пешком и на велосипеде.
+        </p>
+
+        <div class="meta">
+          <div class="meta__row">
+            <span class="meta__key">common</span>
+            <ul class="chips">
+              <li><span class="dim">LOC</span> Москва</li>
+              <li><span class="dim">ORG</span> Авито</li>
+              <li><span class="dim">DOMAIN</span> adtech</li>
+            </ul>
+          </div>
+          <div class="meta__row">
+            <span class="meta__key">special</span>
+            <ul class="chips chips--special">
+              <li><span class="dim">LANG</span> <span id="lang">GO</span></li>
+              <li><span class="dim">UPTIME</span> <span id="uptime">…</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="hero__cta">
+          <a class="btn onlyWork" href="https://t.me/work_is_ok" target="_blank" rel="noopener">→ канал work</a>
+          <a class="btn onlyLife" href="https://t.me/home_is_better" target="_blank" rel="noopener">→ канал life</a>
+          <button class="btn btn--ghost" type="button" data-switch>
+            <span class="onlyWork">смотреть life</span><span class="onlyLife">смотреть work</span>
+          </button>
+        </div>
+      </div>
+
+      <figure class="hero__portrait">
+        <div class="frame">
+          <img id="portrait" src="assets/portrait-light.png" alt="Пиксельный портрет Евгения, 1-битный дизеринг" width="900" height="900" decoding="async">
+          <span class="frame__scan" aria-hidden="true"></span>
+          <span class="frame__corners" aria-hidden="true"></span>
+        </div>
+        <figcaption>150×150 px<span class="figtail"> · atkinson dither</span></figcaption>
+      </figure>
+    </div>
+    <a class="scrollcue" href="#whoami" aria-label="Листать вниз">▼</a>
+  </section>
+
+  <!-- ═══ WHOAMI ═══ -->
+  <section class="sect" id="whoami">
+    <div class="wrap">
+      <h2 class="h2"><span class="dim">$</span> whoami</h2>
+      <div class="two">
+        <div class="prose">
+          <p>Бэкенд-разработчик и архитектор в Авито. Стараюсь быть ближе к данным, там больше ответов на вопросы. Юзеры, кампании, креативы, клики, показы – несите всё.</p>
+          <p class="onlyWork">Проектирую и запускаю большие системы. Люблю задачи, где ошибка стоит дорого. Не люблю созвоны, которые можно было не проводить.</p>
+          <p class="onlyLife">За пределами кода тот же принцип: длинная дистанция, ровный темп, честные цифры. Бег, велосипед, дорога и Fujifilm — способ выгружать голову и собирать маленькие истории.</p>
+          <p>Веду два канала: один — про adtech, инженерку и развитие, второй — про жизнь, когда ноутбук закрыт.</p>
+        </div>
+
+        <dl class="facts onlyWork">
+          <div><dt>стек</dt><dd>Go, PostgreSQL</dd></div>
+          <div><dt>направление</dt><dd>архитектура и разработка</dd></div>
+          <div><dt>проект</dt><dd>ADV — внешняя реклама Авито</dd></div>
+          <div><dt>формат</dt><dd>долгосрочные проекты</dd></div>
+        </dl>
+        <dl class="facts onlyLife">
+          <div><dt>стек</dt><dd>Garmin</dd></div>
+          <div><dt>направление</dt><dd data-draft>бег и велосипед</dd></div>
+          <div><dt>проект</dt><dd data-draft>поддержание формы</dd></div>
+          <div><dt>формат</dt><dd>средние и длинные дистанции</dd></div>
+        </dl>
+      </div>
+    </div>
+    <div class="sep" aria-hidden="true"></div>
+  </section>
+
+  <!-- ═══ SKILLS ═══ -->
+  <section class="sect" id="skills">
+    <div class="wrap">
+      <h2 class="h2"><span class="dim">$</span> ls ./skills <span class="dim">--mode=</span><span class="h2__mode">work</span></h2>
+
+      <ul class="cards onlyWork">
+        <li>
+          <svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="1" width="1" height="1"/><rect x="1" y="2" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="1" y="6" width="1" height="1"/><rect x="0" y="7" width="1" height="1"/><rect x="5" y="7" width="4" height="1"/></svg>
+          <b>go</b>
+          <span>главный язык наших микросервисов</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="0" width="6" height="2"/><rect x="1" y="3" width="6" height="2"/><rect x="1" y="6" width="6" height="2"/></svg>
+          <b>postgresql</b>
+          <span>любимый язык наших данных</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="0" width="3" height="3"/><rect x="5" y="0" width="3" height="3"/><rect x="0" y="5" width="3" height="3"/><rect x="5" y="5" width="3" height="3"/><rect x="3" y="1" width="2" height="1"/><rect x="3" y="6" width="2" height="1"/><rect x="1" y="3" width="1" height="2"/><rect x="6" y="3" width="1" height="2"/></svg>
+          <b>arch</b>
+          <span>чистые домены и понятные контракты</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="6" width="2" height="3"/><rect x="3" y="3" width="2" height="6"/><rect x="6" y="0" width="2" height="9"/></svg>
+          <b>sysdesign</b>
+          <span>нагрузка, паттерны, решения</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="1" width="8" height="1"/><rect x="0" y="1" width="1" height="6"/><rect x="2" y="3" width="4" height="1"/><rect x="2" y="5" width="6" height="1"/><rect x="0" y="7" width="8" height="1"/></svg>
+          <b>project</b>
+          <span>декомпозиция, сроки и предсказуемые релизы</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="0" width="2" height="2"/><rect x="1" y="3" width="4" height="1"/><rect x="1" y="4" width="1" height="4"/><rect x="4" y="4" width="1" height="4"/><rect x="6" y="1" width="2" height="2"/><rect x="6" y="4" width="2" height="4"/></svg>
+          <b>mentor</b>
+          <span>soft & hard skills, развитие инженера</span>
+        </li>
+      </ul>
+
+      <ul class="cards onlyLife">
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="0" width="2" height="2"/><rect x="3" y="2" width="3" height="1"/><rect x="2" y="3" width="4" height="1"/><rect x="1" y="4" width="2" height="1"/><rect x="4" y="4" width="1" height="2"/><rect x="5" y="6" width="2" height="1"/><rect x="2" y="5" width="1" height="2"/><rect x="0" y="7" width="2" height="1"/></svg>
+          <b>running</b>
+          <span>с 2015 года и первого марафона: километры круглый год</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="5" width="1" height="2"/><rect x="1" y="4" width="1" height="1"/><rect x="1" y="7" width="1" height="1"/><rect x="2" y="5" width="1" height="2"/><rect x="5" y="5" width="1" height="2"/><rect x="6" y="4" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="5" width="1" height="2"/><rect x="2" y="2" width="4" height="1"/><rect x="3" y="3" width="1" height="2"/><rect x="5" y="1" width="2" height="1"/></svg>
+          <b>cycling</b>
+          <span>длинные выезды за город; один велосипед собран руками</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="0" width="3" height="1"/><rect x="1" y="1" width="2" height="1"/><rect x="6" y="1" width="2" height="1"/><rect x="0" y="2" width="1" height="5"/><rect x="8" y="2" width="1" height="5"/><rect x="1" y="7" width="2" height="1"/><rect x="6" y="7" width="2" height="1"/><rect x="3" y="8" width="3" height="1"/><rect x="4" y="1" width="1" height="7"/><rect x="1" y="4" width="7" height="1"/></svg>
+          <b>travel</b>
+          <span>от первого Китая до спортивных походов и трибун F1</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 9 9" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="1" width="3" height="1"/><rect x="0" y="2" width="9" height="1"/><rect x="0" y="8" width="9" height="1"/><rect x="0" y="3" width="1" height="5"/><rect x="8" y="3" width="1" height="5"/><rect x="3" y="4" width="3" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="3" y="6" width="3" height="1"/></svg>
+          <b>photo</b>
+          <span>Fujifilm: города, детали и свет между домами</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="5" y="0" width="2" height="1"/><rect x="4" y="1" width="2" height="1"/><rect x="3" y="2" width="2" height="1"/><rect x="2" y="3" width="2" height="1"/><rect x="1" y="4" width="2" height="1"/><rect x="0" y="5" width="2" height="1"/><rect x="0" y="6" width="1" height="2"/><rect x="2" y="7" width="4" height="1"/></svg>
+          <b>writing</b>
+          <span>отчёты о походах и заметки в канале home_is_better</span>
+        </li>
+        <li>
+          <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="5" width="2" height="3"/><rect x="3" y="3" width="2" height="5"/><rect x="6" y="1" width="2" height="7"/><rect x="4" y="1" width="1" height="1"/><rect x="5" y="0" width="1" height="1"/></svg>
+          <b>growth</b>
+          <span>расти самому и растить других: книги, менторство, новые навыки</span>
+        </li>
+      </ul>
+    </div>
+    <div class="sep" aria-hidden="true"></div>
+  </section>
+
+  <!-- ═══ STORY ═══ -->
+  <section class="sect" id="story">
+    <div class="wrap">
+
+      <!-- work: git log -->
+      <div class="onlyWork">
+        <h2 class="h2"><span class="dim">$</span> git log --author=ekonstantinov</h2>
+        <p class="lead">Хронология в Авито с 4 июля 2016 года. Один год — один коммит, который что-то изменил.</p>
+
+        <ol class="log">
+          <li class="log__item">
+            <span class="log__year">2016</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">init:</span> разработчик БД в команде DBA</h3>
+              <p>Первый PR в product-ads. Первая инициатива — аналитика использования индексов в PostgreSQL: искал unused.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2017</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">merge:</span> DBA + MNZ</h3>
+              <p>Участвую в запуске подписок на Авито. Развиваю LF и VAS.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2018</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">feat:</span> сервис user-limits на Go</h3>
+              <p>Активно пишу на PHP, но именно с user-limits будет связано ещё много историй в моей жизни.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2019</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">tag:</span> Senior Backend Engineer, MNZ</h3>
+              <p>Новая планка ответственности внутри монетизации.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2020</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">cherry-pick:</span> другая модель монетизации</h3>
+              <p>Перехожу к MNZ-модели CPA и развиваю её на Авито.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2021</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">upgrade:</span> aTL команды CPA</h3>
+              <p>Стремительный рост продукта и команды.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2022</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">revert:</span> возвращаюсь в Backend и LF</h3>
+              <p>Партицирование размещений.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2023</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">feat:</span> Batch Apply и Listing Resources</h3>
+              <p>Пакетная активация для Autoload. Ресурсы размещения под новые лимиты Авито.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2024</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">docs:</span> арх.документ на Listing Platform</h3>
+              <p>Схема платформы, зафиксированная на бумаге до строчки кода.</p>
+            </div>
+          </li>
+          <li class="log__item">
+            <span class="log__year">2025</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw">refactor:</span> restrictions pipeline и Listing Platform 2.0</h3>
+              <p>Проектирую пайплайн ограничений, платформу ресурсов в Listing и вторую версию платформы.</p>
+            </div>
+          </li>
+          <li class="log__item log__item--head">
+            <span class="log__year">2026</span>
+            <span class="log__rail" aria-hidden="true"></span>
+            <div class="log__body">
+              <h3><span class="log__kw log__kw--head">HEAD -&gt; release:</span> ADV</h3>
+              <p>Проектирование и запуск MVP внешней рекламы Авито.</p>
+            </div>
+          </li>
+        </ol>
+      </div>
+
+      <!-- life: маршрут -->
+      <div class="onlyLife">
+        <h2 class="h2"><span class="dim">$</span> cat route.gpx</h2>
+        <p class="lead">Маршрут вне работы: от первых километров по Москве до кадров на Fujifilm и трибун Формулы-1.</p>
+
+        <div class="routewrap">
+          <svg class="route__path" id="routePath" aria-hidden="true" preserveAspectRatio="none"><path d="" /></svg>
+          <ol class="route" id="route">
+            <li class="route__stop">
+              <div class="route__body">
+                <span class="route__year">2015</span>
+                <h3>Москва. Бег one love</h3>
+                <p>Город и первые километры. С них начался счёт.</p>
+              </div>
+              <span class="route__pin route__pin--start" aria-hidden="true"></span>
+            </li>
+            <li class="route__stop">
+              <div class="route__body">
+                <span class="route__year">2016</span>
+                <h3>Авито. Garmin. Strava</h3>
+                <p>Работа, часы и трек. Всё, что бежится, теперь измеряется.</p>
+              </div>
+              <span class="route__pin" aria-hidden="true"></span>
+            </li>
+            <li class="route__stop">
+              <div class="route__body">
+                <span class="route__year">2018</span>
+                <h3>Китай и первый марафон</h3>
+                <p>Первое большое путешествие и первая заграница. И первые 42 км.</p>
+              </div>
+              <span class="route__pin" aria-hidden="true"></span>
+            </li>
+            <li class="route__stop">
+              <div class="route__body">
+                <span class="route__year">2020</span>
+                <h3>Велосипед и Fujifilm</h3>
+                <p>Две покупки, перевернувшие жизнь. Первый спортивный поход и первый написанный отчёт.</p>
+              </div>
+              <span class="route__pin" aria-hidden="true"></span>
+            </li>
+            <li class="route__stop">
+              <div class="route__body">
+                <span class="route__year">2022</span>
+                <h3>Собрал велосипед сам</h3>
+                <p>Первый и последний — дальше только готовые.</p>
+              </div>
+              <span class="route__pin" aria-hidden="true"></span>
+            </li>
+            <li class="route__stop">
+              <div class="route__body">
+                <span class="route__year">2024</span>
+                <h3>Канал home_is_better</h3>
+                <p>Место для маленьких историй. И новое увлечение — Формула-1.</p>
+              </div>
+              <span class="route__pin" aria-hidden="true"></span>
+            </li>
+            <li class="route__stop">
+              <div class="route__body">
+                <span class="route__year">2025</span>
+                <h3>Самый насыщенный год в поездках</h3>
+                <p>Максимум дорог и городов. И первая Формула-1 вживую.</p>
+              </div>
+              <span class="route__pin route__pin--now" aria-hidden="true"></span>
+            </li>
+          </ol>
+        </div>
+
+      </div>
+
+    </div>
+    <div class="sep" aria-hidden="true"></div>
+  </section>
+
+  <!-- ═══ LINKS ═══ -->
+  <section class="sect" id="links">
+    <div class="wrap">
+      <h2 class="h2"><span class="dim">$</span> cat links.txt</h2>
+
+      <div class="chan">
+        <a class="chan__main" id="chanMain" href="https://t.me/work_is_ok" target="_blank" rel="noopener">
+          <span class="chan__label"><span class="onlyWork">work</span><span class="onlyLife">life</span></span>
+          <span class="chan__title onlyWork">@work_is_ok</span>
+          <span class="chan__title onlyLife">@home_is_better</span>
+          <span class="chan__desc onlyWork">Про Go, арх.дизайн больших систем и adtech изнутри: размещения, лимиты, показы и клики. Разборы решений и грабли из прода.</span>
+          <span class="chan__desc onlyLife">Маленькие истории из жизни: кадры на Fujifilm, дороги, походы и километры. Что происходит, когда ноутбук закрыт.</span>
+          <span class="chan__go">подписаться →</span>
+        </a>
+
+        <button class="chan__other" type="button" data-switch>
+          <span class="chan__other-k">другая сторона</span>
+          <span class="chan__other-t"><span class="onlyWork">life</span><span class="onlyLife">work</span></span>
+          <span class="chan__other-d onlyWork">переключить сайт в режим life: дорога, велосипед, кадры</span>
+          <span class="chan__other-d onlyLife">переключить сайт в режим work: Go, adtech, архитектура</span>
+          <span class="chan__go">переключить →</span>
+        </button>
+      </div>
+
+      <div class="balance">
+        <span class="balance__k">balance</span>
+        <span class="balance__bar" aria-hidden="true"><i></i></span>
+        <span class="balance__v">50 / 50 <span class="dim">— ну, почти</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FOOTER ═══ -->
+  <footer class="sect foot">
+    <div class="wrap foot__grid">
+      <div>
+        <p class="foot__prompt">ekonstantinov@<span class="foot__host">work</span><span class="dim">:~$</span> exit</p>
+        <p class="foot__bye">Сессия завершена.</p>
+      </div>
+      <ul class="foot__links">
+        <li><a href="https://t.me/work_is_ok" target="_blank" rel="noopener">telegram · work_is_ok</a></li>
+        <li><a href="https://t.me/home_is_better" target="_blank" rel="noopener">telegram · home_is_better</a></li>
+      </ul>
+    </div>
+    <p class="foot__meta">Москва · 2026 · сделано на коленке · <kbd>W</kbd> / <kbd>L</kbd> — смена режима</p>
+  </footer>
+
+</main>
+
+<script src="main.js"></script>
+<script data-pplx-inline-edit>
+(function () {
+  if (window === window.top) return;
+
+  const allowedParentOrigins = ["https://www.perplexity.ai","https://perplexity.ai","https://testing.perplexity.ai","https://staging.perplexity.ai","https://*.preview.i.perplexity.ai","http://perplexity.localhost","http://localhost:1420","http://127.0.0.1:1420","http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","http://127.0.0.1:5173"];
+  const MAX_FONT_BYTES = 500 * 1024;
+  const MAX_TOTAL_FONT_BYTES = 2 * 1024 * 1024;
+  let scrollForwarding = false;
+  let scrollRaf = 0;
+  let trustedTopOrigin = null;
+
+  // Allow entries like "https://*.preview.i.perplexity.ai" — the wildcard
+  // matches a single DNS label (no dots), so "https://*.foo" cannot stretch
+  // across multiple labels.
+  function matchesAllowedOrigin(origin) {
+    if (!origin) return false;
+    for (const entry of allowedParentOrigins) {
+      if (!entry.includes("*")) {
+        if (entry === origin) return true;
+        continue;
+      }
+      const pattern = new RegExp(
+        "^" +
+          entry.replace(/[.+?^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^.]+") +
+          "$",
+      );
+      if (pattern.test(origin)) return true;
+    }
+    return false;
+  }
+
+  // Trust decision: when the sender is same-origin-visible (event.origin is a
+  // real origin like https://www.perplexity.ai) we trust event.origin directly.
+  // When event.origin is "null" (opaque broker srcdoc), we fall back to the
+  // broker's stamped `parentOrigin` to identify the top window. The fallback
+  // is claim-only — we rely on the browser's native `targetOrigin` enforcement
+  // on the response path (see postToTrustedTop) to ensure replies can't be
+  // delivered to anyone but the actual top window of that claimed origin.
+  function getTrustedParentOrigin(event) {
+    const forwardedParentOrigin =
+      typeof event.data.parentOrigin === "string" ? event.data.parentOrigin : null;
+    const parentOrigin = event.origin === "null" ? forwardedParentOrigin : event.origin;
+    return matchesAllowedOrigin(parentOrigin) ? parentOrigin : null;
+  }
+
+  // All responses go to window.top with targetOrigin = the allowlisted origin.
+  // An attacker that iframes us inside their own null-origin broker can claim
+  // any parentOrigin they like, but the browser will drop the reply whenever
+  // the real top's origin doesn't match — so the screenshot never leaves.
+  function postToTrustedTop(message) {
+    if (!trustedTopOrigin) return;
+    try {
+      window.top.postMessage(message, trustedTopOrigin);
+    } catch (_error) {}
+  }
+
+  function inlineAll(original, clone) {
+    if (original.nodeType !== 1 || clone.nodeType !== 1) return;
+
+    try {
+      const computedStyle = getComputedStyle(original);
+      // cssText on a computed style is the serialized declaration in modern
+      // Chromium/Safari — a single read beats enumerating ~400 longhand
+      // properties. Firefox returns "" here, so we fall back on empty.
+      const serialized = computedStyle.cssText;
+      if (serialized) {
+        clone.style.cssText = serialized;
+      } else {
+        const parts = new Array(computedStyle.length);
+        for (let index = 0; index < computedStyle.length; index += 1) {
+          const property = computedStyle[index];
+          parts[index] = `${property}:${computedStyle.getPropertyValue(property)};`;
+        }
+        clone.style.cssText = parts.join("");
+      }
+    } catch (_error) {}
+
+    const originalChildren = original.children;
+    const clonedChildren = clone.children;
+    for (
+      let index = 0;
+      index < originalChildren.length && index < clonedChildren.length;
+      index += 1
+    ) {
+      inlineAll(originalChildren[index], clonedChildren[index]);
+    }
+  }
+
+  function extractFontUrl(srcValue) {
+    const matches = [
+      ...srcValue.matchAll(
+        /url\(["']?([^"')]+)["']?\)(?:\s*format\(["']?([^"')]+)["']?\))?/gi,
+      ),
+    ];
+    if (matches.length === 0) return null;
+    const woff2 = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff2"));
+    if (woff2) return woff2[1];
+    const woff = matches.find((m) => m[2] && m[2].toLowerCase().includes("woff"));
+    if (woff) return woff[1];
+    return matches[0][1];
+  }
+
+  // Cache resolved font URL -> data URI across captures. Fonts on a page
+  // essentially never change, and a batch run emits multiple captures back to
+  // back — without this we'd refetch + re-base64 every time.
+  const fontDataUriCache = new Map();
+  const SRC_DECLARATION_RE = /src\s*:\s*[^;}]+/i;
+
+  async function fetchAsDataUri(url) {
+    if (fontDataUriCache.has(url)) return fontDataUriCache.get(url);
+    let dataUri = null;
+    try {
+      const response = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (response.ok) {
+        const blob = await response.blob();
+        if (blob.size <= MAX_FONT_BYTES) {
+          dataUri = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () =>
+              resolve(typeof reader.result === "string" ? reader.result : null);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        }
+      }
+    } catch (_error) {
+      dataUri = null;
+    }
+    fontDataUriCache.set(url, dataUri);
+    return dataUri;
+  }
+
+  function collectFontFaceRuleTexts() {
+    const rules = [];
+    for (const sheet of document.styleSheets) {
+      let cssRules;
+      try {
+        cssRules = sheet.cssRules;
+      } catch (_error) {
+        continue;
+      }
+      if (!cssRules) continue;
+      for (const rule of cssRules) {
+        const cssText = rule.cssText || "";
+        if (cssText.startsWith("@font-face")) rules.push(cssText);
+      }
+    }
+    return rules;
+  }
+
+  async function buildInlinedFontCss() {
+    const ruleTexts = collectFontFaceRuleTexts();
+    if (ruleTexts.length === 0) return null;
+
+    const resolved = ruleTexts.map((cssText) => {
+      if (!SRC_DECLARATION_RE.test(cssText)) return null;
+      const srcMatch = cssText.match(/src\s*:\s*([^;}]+)[;}]/i);
+      if (!srcMatch) return null;
+      const url = extractFontUrl(srcMatch[1]);
+      if (!url) return null;
+      try {
+        return { cssText, url: new URL(url, document.baseURI).href };
+      } catch (_error) {
+        return null;
+      }
+    });
+
+    const dataUris = await Promise.all(
+      resolved.map((entry) => (entry ? fetchAsDataUri(entry.url) : Promise.resolve(null))),
+    );
+
+    const inlined = [];
+    let totalBytes = 0;
+    for (let index = 0; index < resolved.length; index += 1) {
+      const entry = resolved[index];
+      const dataUri = dataUris[index];
+      if (!entry || !dataUri) continue;
+      const approxBytes = dataUri.length * 0.75;
+      if (totalBytes + approxBytes > MAX_TOTAL_FONT_BYTES) break;
+      totalBytes += approxBytes;
+      inlined.push(entry.cssText.replace(SRC_DECLARATION_RE, `src: url("${dataUri}")`));
+    }
+    return inlined.length > 0 ? inlined.join("\n") : null;
+  }
+
+  function stripExternal(clone) {
+    const images = clone.querySelectorAll("img");
+    for (let index = 0; index < images.length; index += 1) {
+      const src = images[index].getAttribute("src");
+      if (src && !src.startsWith("data:")) images[index].removeAttribute("src");
+    }
+
+    const elements = clone.querySelectorAll("*");
+    for (let index = 0; index < elements.length; index += 1) {
+      const style = elements[index].style.cssText;
+      if (style && style.includes("url(")) {
+        elements[index].style.cssText = style.replace(
+          /url\(["']?(?!data:)[^)"']*["']?\)/gi,
+          "none",
+        );
+      }
+    }
+  }
+
+  function emitScroll() {
+    scrollRaf = 0;
+    if (!scrollForwarding) return;
+    postToTrustedTop({
+      type: "INLINE_EDIT_SCROLL",
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
+    });
+  }
+
+  window.addEventListener(
+    "scroll",
+    function () {
+      if (!scrollForwarding || scrollRaf) return;
+      scrollRaf = requestAnimationFrame(emitScroll);
+    },
+    { passive: true, capture: true },
+  );
+
+  async function handleCaptureRequest(event) {
+    const requestId = event.data.requestId;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    function postResult(dataUrl) {
+      postToTrustedTop({
+        type: "INLINE_EDIT_SCREENSHOT_RESULT",
+        requestId,
+        dataUrl,
+        scrollX,
+        scrollY,
+      });
+    }
+
+    try {
+      // Wait for any pending web fonts to resolve so both inline metrics and
+      // the @font-face inlining below see the same loaded faces.
+      if (document.fonts && document.fonts.ready) {
+        try {
+          await document.fonts.ready;
+        } catch (_error) {}
+      }
+
+      const clone = document.documentElement.cloneNode(true);
+      inlineAll(document.documentElement, clone);
+
+      const removedNodes = clone.querySelectorAll("script,link[rel=\"stylesheet\"],style");
+      for (let index = 0; index < removedNodes.length; index += 1) {
+        removedNodes[index].remove();
+      }
+
+      stripExternal(clone);
+
+      // Re-embed web fonts as data-URI @font-face rules so the SVG rasterizer
+      // can resolve them — external font URLs aren't fetched during
+      // foreignObject rendering, which would otherwise force a fallback face
+      // and change text metrics.
+      const inlinedFontCss = await buildInlinedFontCss();
+      if (inlinedFontCss) {
+        const styleEl = document.createElement("style");
+        styleEl.textContent = inlinedFontCss;
+        const head = clone.querySelector("head");
+        if (head) head.appendChild(styleEl);
+        else clone.insertBefore(styleEl, clone.firstChild);
+      }
+
+      const html = new XMLSerializer().serializeToString(clone);
+      const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">` +
+        '<foreignObject width="100%" height="100%">' +
+        `<div xmlns="http://www.w3.org/1999/xhtml" style="width:${width}px;height:${height}px;overflow:hidden">` +
+        `<div style="position:relative;left:-${scrollX}px;top:-${scrollY}px">` +
+        html +
+        "</div></div></foreignObject></svg>";
+      const svgUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+      const image = new Image();
+      image.onload = function () {
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(image, 0, 0);
+        postResult(canvas.toDataURL("image/png"));
+      };
+      image.onerror = function () {
+        postResult(null);
+      };
+      image.src = svgUrl;
+    } catch (_error) {
+      postResult(null);
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!event.data) return;
+    // Only accept messages from the direct parent frame. Blocks sibling /
+    // unrelated-window postMessage senders that could otherwise reach us.
+    if (event.source !== window.parent) return;
+
+    const trustedParentOrigin = getTrustedParentOrigin(event);
+    if (!trustedParentOrigin) return;
+    trustedTopOrigin = trustedParentOrigin;
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_START") {
+      scrollForwarding = true;
+      emitScroll();
+      return;
+    }
+
+    if (event.data.type === "INLINE_EDIT_SCROLL_STOP") {
+      scrollForwarding = false;
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = 0;
+      return;
+    }
+
+    if (event.data.type !== "INLINE_EDIT_CAPTURE_REQUEST") return;
+
+    handleCaptureRequest(event);
+  });
+})();
+
+
+</script></body>
+</html>

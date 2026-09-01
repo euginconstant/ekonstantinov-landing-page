@@ -7,6 +7,9 @@
   const navLinks = [...document.querySelectorAll('.bar__nav a')];
   const modeBtns = [...document.querySelectorAll('[data-mode-btn]')];
   const switchBtns = [...document.querySelectorAll('[data-switch]')];
+  const langEl = document.getElementById('lang');
+  const uptimeEl = document.getElementById('uptime');
+  const themeColor = document.querySelector('meta[name="theme-color"]');
 
   /* ── даты отсчёта uptime ─────────────── */
   const START = {
@@ -37,12 +40,10 @@
   }
 
   function renderSpecial(mode) {
-    const lang = document.getElementById('lang');
-    const up = document.getElementById('uptime');
-    if (lang) lang.textContent = LANG[mode];
-    if (up) {
-      up.textContent = uptimeText(START[mode]);
-      up.setAttribute('title', mode === 'work'
+    if (langEl) langEl.textContent = LANG[mode];
+    if (uptimeEl) {
+      uptimeEl.textContent = uptimeText(START[mode]);
+      uptimeEl.setAttribute('title', mode === 'work'
         ? 'с 4 июля 2016 — начало работы в Авито'
         : 'с 7 сентября 1992');
     }
@@ -57,6 +58,7 @@
     modeBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.modeBtn === mode)));
     document.querySelectorAll('.bar__host, .foot__host, .h2__mode').forEach(el => { el.textContent = mode; });
     document.title = `ekonstantinov — ${mode}`;
+    if (themeColor) themeColor.setAttribute('content', mode === 'work' ? '#0b0b0b' : '#f3f1ec');
 
     if (portrait) {
       const want = mode === 'work' ? 'assets/portrait-light.png' : 'assets/portrait-dark.png';
@@ -98,34 +100,7 @@
     else if (k === 'arrowright') setMode('life');
   });
 
-  /* стартовый режим: из адреса (#work / #life), иначе work */
-  let initial = 'work';
-  const hash = (location.hash || '').replace('#', '');
-  if (hash === 'work' || hash === 'life') initial = hash;
-  setMode(initial, { silent: true });
-  window.addEventListener('hashchange', () => {
-    const h = (location.hash || '').replace('#', '');
-    if (h === 'work' || h === 'life') setMode(h);
-  });
-  setInterval(() => renderSpecial(html.dataset.mode), 60000);
-
-  /* ── прогресс чтения ─────────────────── */
-  let raf = null;
-  const onScroll = () => {
-  if (!fill || raf) return;
-
-  raf = requestAnimationFrame(() => {
-    raf = null;
-    const max = document.documentElement.scrollHeight - window.innerHeight;
-    const p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
-    fill.style.width = `${Math.round(p * 40) / 40 * 100}%`;
-  });
-};
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
-  onScroll();
-
-  /* ── появление блоков ────────────────── */
+  /* ── маршрут (life) ───────────────────── */
   const routeWrap = document.querySelector('.routewrap');
   const routeSvg = document.getElementById('routePath');
   const routePathEl = routeSvg && routeSvg.querySelector('path');
@@ -156,13 +131,38 @@
 
   if (routeWrap) {
     drawRoute();
-    let rt = null;
-    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(drawRoute, 120); });
     if ('ResizeObserver' in window) new ResizeObserver(() => drawRoute()).observe(routeWrap);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawRoute);
   }
 
-  const targets = document.querySelectorAll('.log__item, .cards li, .route__stop, .now, .prose p, .facts, .lead, .chan__main, .chan__other');
+  /* стартовый режим: из адреса (#work / #life), иначе work */
+  let initial = 'work';
+  const hash = (location.hash || '').replace('#', '');
+  if (hash === 'work' || hash === 'life') initial = hash;
+  setMode(initial, { silent: true });
+  window.addEventListener('hashchange', () => {
+    const h = (location.hash || '').replace('#', '');
+    if (h === 'work' || h === 'life') setMode(h);
+  });
+  setInterval(() => renderSpecial(html.dataset.mode), 60000);
+
+  /* ── прогресс чтения ─────────────────── */
+  let raf = null;
+  const onScroll = () => {
+    if (!fill || raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = null;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const p = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      fill.style.width = `${Math.round(p * 40) / 40 * 100}%`;
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  /* ── появление блоков ────────────────── */
+  const targets = document.querySelectorAll('.log__item, .cards li, .route__stop, .prose p, .facts, .lead, .chan__main, .chan__other');
   targets.forEach(t => t.classList.add('reveal'));
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });

@@ -68,9 +68,9 @@
         <h1 class="hero__name">Евгений<br><span class="hero__name-2">Константинов</span></h1>
 
         <p class="hero__tag onlyWork">
-          Пишу арх.дизайн больших систем, реализую их на Go.
-          Считаю <strong>показы и клики</strong>.
-          Запускаю новый рекламный продукт в Авито.
+          Рисую арх.дизайн больших систем и запускаю их в проде.
+          Считаю <strong>показы и клики</strong> на Go.
+          Создаю новый рекламный продукт в Авито.
         </p>
         <p class="hero__tag onlyLife">
           Пишу и снимаю на Fujifilm маленькие истории из жизни.
@@ -96,21 +96,21 @@
         </div>
 
         <div class="hero__cta">
-          <a class="btn onlyWork" href="https://t.me/work_is_ok" target="_blank" rel="noopener">→ канал work</a>
-          <a class="btn onlyLife" href="https://t.me/home_is_better" target="_blank" rel="noopener">→ канал life</a>
+          <a class="btn onlyWork" href="https://t.me/work_is_ok" target="_blank" rel="noopener">→ читать канал work</a>
+          <a class="btn onlyLife" href="https://t.me/home_is_better" target="_blank" rel="noopener">→ читать канал life</a>
           <button class="btn btn--ghost" type="button" data-switch>
-            <span class="onlyWork">смотреть life</span><span class="onlyLife">смотреть work</span>
+            <span class="onlyWork">переключиться на life</span><span class="onlyLife">переключиться на work</span>
           </button>
         </div>
       </div>
 
       <figure class="hero__portrait">
         <div class="frame">
-          <img id="portrait" src="assets/portrait-light.png" alt="Пиксельный портрет Евгения, 1-битный дизеринг" width="900" height="900" decoding="async">
+          <img id="portrait" src="assets/portrait-light.png" alt="Пиксельный портрет, 1-битный дизеринг" width="900" height="900" decoding="async">
           <span class="frame__scan" aria-hidden="true"></span>
           <span class="frame__corners" aria-hidden="true"></span>
         </div>
-        <figcaption>150×150 px<span class="figtail"> · atkinson dither</span></figcaption>
+        <figcaption>900×900 px<span class="figtail"> · atkinson dither</span></figcaption>
       </figure>
     </div>
     <a class="scrollcue" href="#whoami" aria-label="Листать вниз">▼</a>
@@ -124,7 +124,7 @@
         <div class="prose">
           <p>Бэкенд-разработчик и архитектор в Авито. Стараюсь быть ближе к данным, там больше ответов на вопросы. Юзеры, кампании, креативы, клики, показы – несите всё.</p>
           <p class="onlyWork">Проектирую и запускаю большие системы. Люблю задачи, где ошибка стоит дорого. Не люблю созвоны, которые можно было не проводить.</p>
-          <p class="onlyLife">За пределами кода тот же принцип: длинная дистанция, ровный темп, честные цифры. Бег, велосипед, дорога и Fujifilm — способ выгружать голову и собирать маленькие истории.</p>
+          <p class="onlyLife">Вне работы: дороги, цели, снова цифры. Бег, велосипед, рюкзак и Fujifilm — способ разгружать голову и собирать маленькие истории.</p>
           <p>Веду два канала: один — про adtech, инженерку и развитие, второй — про жизнь, когда ноутбук закрыт.</p>
         </div>
 
@@ -226,31 +226,22 @@
       <!-- work: git log -->
       <div class="onlyWork">
         <h2 class="h2"><span class="dim">$</span> git log --author=ekonstantinov</h2>
-        <p class="lead">Хронология в Авито с 4 июля 2016 года. Один год — один коммит, который что-то изменил.</p>
+        <p class="lead">Хронология в Авито. Важные вехи-коммиты:</p>
 
         <ol class="log">
           <li class="log__item">
             <span class="log__year">2016</span>
             <span class="log__rail" aria-hidden="true"></span>
             <div class="log__body">
-              <h3><span class="log__kw">init:</span> разработчик БД в команде DBA</h3>
-              <p>Первый PR в product-ads. Первая инициатива — аналитика использования индексов в PostgreSQL: искал unused.</p>
+              <h3><span class="log__kw">init:</span> Разработчик баз данных в команде DBA</h3>
+              <p>Первый восстановленный прод. Первый сломанный прод.</p>
             </div>
-          </li>
-          <li class="log__item">
-            <span class="log__year">2017</span>
-            <span class="log__rail" aria-hidden="true"></span>
-            <div class="log__body">
-              <h3><span class="log__kw">merge:</span> DBA + MNZ</h3>
-              <p>Участвую в запуске подписок на Авито. Развиваю LF и VAS.</p>
-            </div>
-          </li>
           <li class="log__item">
             <span class="log__year">2018</span>
             <span class="log__rail" aria-hidden="true"></span>
             <div class="log__body">
-              <h3><span class="log__kw">feat:</span> сервис user-limits на Go</h3>
-              <p>Активно пишу на PHP, но именно с user-limits будет связано ещё много историй в моей жизни.</p>
+              <h3><span class="log__kw">feat:</span> DBA + MNZ</h3>
+              <p>Первым из DBA ушёл в продуктовую команду. Активно пишу на PHP, пробую микросервисы на go.</p>
             </div>
           </li>
           <li class="log__item">
@@ -265,48 +256,32 @@
             <span class="log__year">2020</span>
             <span class="log__rail" aria-hidden="true"></span>
             <div class="log__body">
-              <h3><span class="log__kw">cherry-pick:</span> другая модель монетизации</h3>
-              <p>Перехожу к MNZ-модели CPA и развиваю её на Авито.</p>
-            </div>
-          </li>
-          <li class="log__item">
-            <span class="log__year">2021</span>
-            <span class="log__rail" aria-hidden="true"></span>
-            <div class="log__body">
-              <h3><span class="log__kw">upgrade:</span> aTL команды CPA</h3>
-              <p>Стремительный рост продукта и команды.</p>
+              <h3><span class="log__kw">cherry-pick:</span> Senior BE в CPA</h3>
+              <p>Новый грейд. Новый проект – модель монетизации CPA в Авито.</p>
             </div>
           </li>
           <li class="log__item">
             <span class="log__year">2022</span>
             <span class="log__rail" aria-hidden="true"></span>
             <div class="log__body">
-              <h3><span class="log__kw">revert:</span> возвращаюсь в Backend и LF</h3>
-              <p>Партицирование размещений.</p>
-            </div>
-          </li>
-          <li class="log__item">
-            <span class="log__year">2023</span>
-            <span class="log__rail" aria-hidden="true"></span>
-            <div class="log__body">
-              <h3><span class="log__kw">feat:</span> Batch Apply и Listing Resources</h3>
-              <p>Пакетная активация для Autoload. Ресурсы размещения под новые лимиты Авито.</p>
+              <h3><span class="log__kw">revert:</span> В TeamLead и обратно</h3>
+              <p>aTL в команде CPA. Активно растим продукт, команду тех.долг</p>
             </div>
           </li>
           <li class="log__item">
             <span class="log__year">2024</span>
             <span class="log__rail" aria-hidden="true"></span>
             <div class="log__body">
-              <h3><span class="log__kw">docs:</span> арх.документ на Listing Platform</h3>
-              <p>Схема платформы, зафиксированная на бумаге до строчки кода.</p>
+              <h3><span class="log__kw">refactor:</span> Make MNZ LF great again</h3>
+              <p>Партицирование нагруженных Posgressql. Пакетная активация для Autoload.</p>
             </div>
           </li>
           <li class="log__item">
             <span class="log__year">2025</span>
             <span class="log__rail" aria-hidden="true"></span>
             <div class="log__body">
-              <h3><span class="log__kw">refactor:</span> restrictions pipeline и Listing Platform 2.0</h3>
-              <p>Проектирую пайплайн ограничений, платформу ресурсов в Listing и вторую версию платформы.</p>
+              <h3><span class="log__kw">public:</span> Развитие личного бренда</h3>
+              <p>Ментор в Авито. Первое выступление на HighLoad и первая статья на Habr.</p>
             </div>
           </li>
           <li class="log__item log__item--head">
@@ -314,7 +289,7 @@
             <span class="log__rail" aria-hidden="true"></span>
             <div class="log__body">
               <h3><span class="log__kw log__kw--head">HEAD -&gt; release:</span> ADV</h3>
-              <p>Проектирование и запуск MVP внешней рекламы Авито.</p>
+              <p>Фичалид внешней рекламы Авито. Проектирование и запуск пилота.</p>
             </div>
           </li>
         </ol>
@@ -323,7 +298,7 @@
       <!-- life: маршрут -->
       <div class="onlyLife">
         <h2 class="h2"><span class="dim">$</span> cat route.gpx</h2>
-        <p class="lead">Маршрут вне работы: от первых километров по Москве до кадров на Fujifilm и трибун Формулы-1.</p>
+        <p class="lead">Путь вне работы. Кто я, где я:</p>
 
         <div class="routewrap">
           <svg class="route__path" id="routePath" aria-hidden="true" preserveAspectRatio="none"><path d="" /></svg>
@@ -332,7 +307,7 @@
               <div class="route__body">
                 <span class="route__year">2015</span>
                 <h3>Москва. Бег one love</h3>
-                <p>Город и первые километры. С них начался счёт.</p>
+                <p>Новый город и первые шаги после армии</p>
               </div>
               <span class="route__pin route__pin--start" aria-hidden="true"></span>
             </li>
@@ -340,15 +315,15 @@
               <div class="route__body">
                 <span class="route__year">2016</span>
                 <h3>Авито. Garmin. Strava</h3>
-                <p>Работа, часы и трек. Всё, что бежится, теперь измеряется.</p>
+                <p>Работа. Первые часы и первые засчитанные километры</p>
               </div>
               <span class="route__pin" aria-hidden="true"></span>
             </li>
             <li class="route__stop">
               <div class="route__body">
                 <span class="route__year">2018</span>
-                <h3>Китай и первый марафон</h3>
-                <p>Первое большое путешествие и первая заграница. И первые 42 км.</p>
+                <h3>Большие цифры и большие дороги</h3>
+                <p>Китай. Первое большое и первое заграничное путешествие. Первые 42 км.</p>
               </div>
               <span class="route__pin" aria-hidden="true"></span>
             </li>
@@ -356,31 +331,31 @@
               <div class="route__body">
                 <span class="route__year">2020</span>
                 <h3>Велосипед и Fujifilm</h3>
-                <p>Две покупки, перевернувшие жизнь. Первый спортивный поход и первый написанный отчёт.</p>
+                <p>Две покупки, перевернувшие жизнь. Первый поход и первый большой отчёт.</p>
               </div>
               <span class="route__pin" aria-hidden="true"></span>
             </li>
             <li class="route__stop">
               <div class="route__body">
                 <span class="route__year">2022</span>
-                <h3>Собрал велосипед сам</h3>
-                <p>Первый и последний — дальше только готовые.</p>
+                <h3>Походный велосипед</h3>
+                <p>Полный кастом. Первый и последний — дальше только готовые.</p>
               </div>
               <span class="route__pin" aria-hidden="true"></span>
             </li>
             <li class="route__stop">
               <div class="route__body">
                 <span class="route__year">2024</span>
-                <h3>Канал home_is_better</h3>
-                <p>Место для маленьких историй. И новое увлечение — Формула-1.</p>
+                <h3>Life в режиме Live</h3>
+                <p>Первый личный канал. И новое большое увлечение — Формула-1.</p>
               </div>
               <span class="route__pin" aria-hidden="true"></span>
             </li>
             <li class="route__stop">
               <div class="route__body">
-                <span class="route__year">2025</span>
-                <h3>Самый насыщенный год в поездках</h3>
-                <p>Максимум дорог и городов. И первая Формула-1 вживую.</p>
+                <span class="route__year">2026</span>
+                <h3>Смена целей, поиск новых</h3>
+                <p>Искать где-то здесь</p>
               </div>
               <span class="route__pin route__pin--now" aria-hidden="true"></span>
             </li>
@@ -403,7 +378,7 @@
           <span class="chan__label"><span class="onlyWork">work</span><span class="onlyLife">life</span></span>
           <span class="chan__title onlyWork">@work_is_ok</span>
           <span class="chan__title onlyLife">@home_is_better</span>
-          <span class="chan__desc onlyWork">Про Go, арх.дизайн больших систем и adtech изнутри: размещения, лимиты, показы и клики. Разборы решений и грабли из прода.</span>
+          <span class="chan__desc onlyWork">Про развитие инженеров, арх.дизайн больших систем и adtech изнутри. Разборы решений из прода, допущенные и предотвращённые ошибки.</span>
           <span class="chan__desc onlyLife">Маленькие истории из жизни: кадры на Fujifilm, дороги, походы и километры. Что происходит, когда ноутбук закрыт.</span>
           <span class="chan__go">подписаться →</span>
         </a>

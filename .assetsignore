@@ -1,5 +1,7 @@
 .github
 docs
+node_modules
+.wrangler
 README.md
 wrangler.jsonc
 .gitignore

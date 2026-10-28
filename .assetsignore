@@ -7,3 +7,4 @@ package-lock.json
 README.md
 wrangler.jsonc
 .gitignore
+tools

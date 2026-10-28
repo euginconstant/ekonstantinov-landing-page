@@ -218,6 +218,10 @@ html[data-mode="life"] .switch__thumb{transform:translateX(100%)}
   transition:background-color .12s steps(2,end),color .12s steps(2,end);
 }
 .cards li:hover{background:var(--fg);color:var(--bg)}
+.cards .cardlink{
+  display:grid;gap:var(--u);align-content:start;text-decoration:none;color:inherit;
+  margin:calc(var(--u)*-3);padding:calc(var(--u)*3);height:calc(100% + var(--u)*6);
+}
 .cards svg{width:24px;height:24px;fill:currentColor}
 .cards b{font-family:var(--pixel);font-size:30px;line-height:1;font-weight:700;letter-spacing:.02em}
 .cards span{font-size:13.5px;opacity:.7;line-height:1.6}

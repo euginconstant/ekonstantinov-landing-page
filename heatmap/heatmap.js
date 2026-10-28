@@ -1,25 +1,26 @@
 // Travel Heatmap — ванильный порт Next.js-компонента (src/components/heatmap/travel-heatmap.tsx
 // исходного проекта). Логика отрисовки, санитизации и PIP перенесена 1:1, изменения:
-// - стартовые данные: бандл с децимацией 110 м + предвычисленные geo-теги треков
-//   (страны/регионы считаются по тегам, PIP на клиенте не выполняется);
+// - данные v2 — СЕТКА вместо треков: в бандле нет GPS-точек, только ячейки
+//   «посещено» с флагами (вид спорта, повторность) на трёх уровнях детализации;
+//   рендер выбирает уровень по зуму, интенсивность — один визит vs несколько;
 // - контуры грузятся только посещённых стран (+ РФ для PIP-классификации) и регионов;
 // - при импорте пользовательских треков: теги считаются компактным PIP-индексом;
-//   промах по стране/региону → разовая догрузка полной геометрии (geo/full/*)
-//   и пересчёт тегов пользовательских треков по ней; вид спорта определяется
-//   на лету (FIT sessions sport / GPX <type>), иначе «Другое»;
-// - кнопка «Сбросить треки» возвращает исходный бандл;
+//   промах по стране/региону → разовая догрузка полной геометрии (geo/full/*);
+//   вид спорта определяется на лету (FIT sessions sport / GPX <type>), иначе «Другое»;
+//   свои треки рендерятся точно (они не покидают браузер);
+// - кнопка «Сбросить треки» возвращает исходную сетку;
 // - по умолчанию включены страны, регионы и тёмная база.
 
 import * as L from './vendor/leaflet.js';
 
 const SHIFTS = [-720, -360, 0, 360, 720]; // копии мира для антимеридиана
-const MAX_ZOOM = 12; // приватность: максимум — масштаб микрорайона
+const MAX_ZOOM = 11; // максимум зума карты
 const TILE_URLS = {
   light:
     'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
   dark:
     'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-};
+}; // Esri Gray Canvas: единственный серый стиль, свободно отдающий тайлы без ключа
 const TILE_ATTR = 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ';
 const MARGIN = 256; // запас канвы за краями вьюпорта (px)
 const RU_ISO = 'RU'; // домашняя страна: в PIP-индексе есть, но не подсвечивается
@@ -30,6 +31,8 @@ const SPORTS = [
   { key: 'ride', label: 'Вело' },
   { key: 'other', label: 'Другое' },
 ];
+const SPORT_BIT = { run: 1, hike: 2, ride: 4, other: 8 };
+const BUCKET_T = [0.5, 0.65, 0.8]; // градации яркости: 1 / ≥4 / ≥16 визитов
 
 // Inferno LUT (256), интерполяция по опорным точкам matplotlib
 const INFERNO_STOPS = [
@@ -69,10 +72,14 @@ let heatCanvas = null;
 let binCanvas = null;
 let rafId = 0;
 
-/** Трек: { parts: number[][] (плоские [lat,lon,lat,lon…]), distanceKm, sport, tags } */
-let bundleTracks = []; // исходный бандл (не мутируется)
-let bundleActive = true; // «Сброс» прячет бандл; «Вернуть мои треки» — возвращает
-let userTracks = []; // импортированные пользователем
+/**
+ * Бандл v2 — сетка, без GPS-точек:
+ * { totals: {tracks, km, bySport}, grids: [{cell, cells: [la, lo, flags, …]}],
+ *   countries: {iso: [кол-во треков, маска спорта]}, regions: {code: […]} }
+ */
+let bundle = null;
+let bundleActive = true; // «Сброс» прячет сетку; «Вернуть мои треки» — возвращает
+let userTracks = []; // импортированные пользователем (точные, локальные)
 let sportCounts = { run: 0, hike: 0, ride: 0, other: 0 };
 const sportsOn = new Set(SPORTS.map((s) => s.key));
 
@@ -244,9 +251,79 @@ function normalizeSport(raw) {
   return 'other';
 }
 
-// ---------- тепловая канва (порт redrawHeat) ----------
+// ---------- тепловая канва ----------
 function activeTracks() {
-  return (bundleActive ? bundleTracks : []).concat(userTracks);
+  return (bundleActive ? [] : []).concat(userTracks); // сетка рендерится отдельно, см. redrawHeat
+}
+
+/** Уровень сетки под текущий зум: самая мелкая ячейка не мельче ~8 px. */
+function pickGridLevel() {
+  if (!bundle) return null;
+  const pxPerDeg = (256 * Math.pow(2, map.getZoom())) / 360;
+  let best = null;
+  for (const g of bundle.grids) {
+    const px = pxPerDeg * g.cell;
+    if (px >= 2.6) best = g; // запоминаем самую мелкую подходящую (×2 крупнее)
+  }
+  return best ?? bundle.grids[0]; // при сильном отдалении — самый грубый уровень
+}
+
+/** Проход по сетке: цветные ячейки на отдельной канве (тот же размер, что тепловая). */
+let gridLayerCanvas = null;
+function drawGridLayer() {
+  const grid = pickGridLevel();
+  if (!grid) return null;
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const dark = theme === 'dark';
+  const enabledMask = SPORTS.reduce((m, s) => m + (sportsOn.has(s.key) ? SPORT_BIT[s.key] : 0), 0);
+  if (enabledMask === 0) return null;
+
+  if (!gridLayerCanvas) gridLayerCanvas = document.createElement('canvas');
+  const gc = gridLayerCanvas;
+  const bw = heatCanvas.width;
+  const bh = heatCanvas.height;
+  if (gc.width !== bw || gc.height !== bh) {
+    gc.width = bw;
+    gc.height = bh;
+  }
+  const gctx = gc.getContext('2d');
+  gctx.clearRect(0, 0, bw, bh);
+
+  const cell = grid.cell;
+  const bounds = map.getBounds();
+  const pad = cell;
+  const laMin = Math.floor((bounds.getSouth() - pad) / cell);
+  const laMax = Math.ceil((bounds.getNorth() + pad) / cell);
+  const loMin = Math.floor((bounds.getWest() - pad) / cell);
+  const loMax = Math.ceil((bounds.getEast() + pad) / cell);
+
+  const cells = grid.cells;
+  for (let i = 0; i < cells.length; i += 3) {
+    const la = cells[i];
+    const lo = cells[i + 1];
+    const flags = cells[i + 2];
+    if ((flags & enabledMask) === 0) continue;
+    if (la < laMin || la > laMax || lo < loMin || lo > loMax) continue;
+    const t = BUCKET_T[(flags >> 4) & 3];
+    const [r, g, b] = LUT[Math.round(t * 255)];
+    const a = Math.min(1, (dark ? 0.35 : 0.3) + t * 0.55);
+    const nw = map.latLngToContainerPoint([la * cell, lo * cell]);
+    const se = map.latLngToContainerPoint([(la + 1) * cell, (lo + 1) * cell]);
+    gctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+    gctx.fillRect(
+      Math.round((nw.x + MARGIN) * dpr),
+      Math.round((nw.y + MARGIN) * dpr),
+      Math.round((se.x - nw.x) * dpr) + 1,
+      Math.round((se.y - nw.y) * dpr) + 1,
+    );
+  }
+  return { canvas: gc, blurPx: gridBlurPx(grid, dpr) };
+}
+
+function gridBlurPx(grid, dpr) {
+  const pxPerDeg = (256 * Math.pow(2, map.getZoom())) / 360;
+  const px = pxPerDeg * grid.cell * dpr;
+  return Math.max(1.5, Math.min(14, px * 0.7));
 }
 
 function redrawHeat() {
@@ -273,79 +350,91 @@ function redrawHeat() {
   if (!ctx) return;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, heatCanvas.width, heatCanvas.height);
+  const dark = theme === 'dark';
 
-  // 2) сетка агрегации
-  const CELL = 8;
-  const gw = Math.ceil(cw / CELL) + 1;
-  const gh = Math.ceil(ch / CELL) + 1;
-  binCanvas.width = gw;
-  binCanvas.height = gh;
-  const bctx = binCanvas.getContext('2d');
-  if (!bctx) return;
-  const grid = new Float32Array(gw * gh);
+  // 2а) сетка бандла (без GPS-точек): цветные ячейки + размытие
+  const gridLayer = bundleActive ? drawGridLayer() : null;
+  if (gridLayer) {
+    ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+    ctx.filter = `blur(${gridLayer.blurPx}px)`;
+    ctx.drawImage(gridLayer.canvas, 0, 0);
+    ctx.filter = 'none';
+    ctx.globalCompositeOperation = 'source-over';
+  }
 
-  const zoom = map.getZoom();
-  const pxPerDeg = (256 * Math.pow(2, zoom)) / 360;
-  const padLon = MARGIN / pxPerDeg + 1;
-  const bounds = map.getBounds();
-  const west = bounds.getWest() - padLon;
-  const east = bounds.getEast() + padLon;
+  // 2б) пользовательские треки — точный конвейер (как в оригинале)
+  const userVisible = activeTracks();
+  let drewPoints = false;
+  if (userVisible.length > 0) {
+    const CELL = 8;
+    const gw = Math.ceil(cw / CELL) + 1;
+    const gh = Math.ceil(ch / CELL) + 1;
+    binCanvas.width = gw;
+    binCanvas.height = gh;
+    const bctx = binCanvas.getContext('2d');
+    if (!bctx) return;
+    const gridArr = new Float32Array(gw * gh);
 
-  let maxCell = 0;
-  for (const track of activeTracks()) {
-    if (!sportsOn.has(track.sport)) continue; // фильтр спорта
-    for (const flat of track.parts) {
-      for (let i = 0; i < flat.length; i += 2) {
-        const lat = flat[i];
-        const lon = flat[i + 1];
-        // bbox-фильтр с учётом копий мира
-        let hit = false;
-        for (const shift of SHIFTS) {
-          const l = lon + shift;
-          if (l >= west && l <= east) {
-            hit = true;
-            break;
+    const zoom = map.getZoom();
+    const pxPerDeg = (256 * Math.pow(2, zoom)) / 360;
+    const padLon = MARGIN / pxPerDeg + 1;
+    const bounds = map.getBounds();
+    const west = bounds.getWest() - padLon;
+    const east = bounds.getEast() + padLon;
+
+    let maxCell = 0;
+    for (const track of userVisible) {
+      if (!sportsOn.has(track.sport)) continue;
+      for (const flat of track.parts) {
+        for (let i = 0; i < flat.length; i += 2) {
+          const lat = flat[i];
+          const lon = flat[i + 1];
+          let hit = false;
+          for (const shift of SHIFTS) {
+            const l = lon + shift;
+            if (l >= west && l <= east) {
+              hit = true;
+              break;
+            }
           }
+          if (!hit) continue;
+          const p = map.latLngToContainerPoint([lat, lon]);
+          const gx = Math.floor((p.x + MARGIN) / CELL);
+          const gy = Math.floor((p.y + MARGIN) / CELL);
+          if (gx < 0 || gy < 0 || gx >= gw || gy >= gh) continue;
+          const idx = gy * gw + gx;
+          gridArr[idx] += 1;
+          if (gridArr[idx] > maxCell) maxCell = gridArr[idx];
         }
-        if (!hit) continue;
-        const p = map.latLngToContainerPoint([lat, lon]);
-        const gx = Math.floor((p.x + MARGIN) / CELL);
-        const gy = Math.floor((p.y + MARGIN) / CELL);
-        if (gx < 0 || gy < 0 || gx >= gw || gy >= gh) continue;
-        const idx = gy * gw + gx;
-        grid[idx] += 1;
-        if (grid[idx] > maxCell) maxCell = grid[idx];
       }
     }
+    if (maxCell > 0) {
+      const img = bctx.createImageData(gw, gh);
+      const data = img.data;
+      const logMax = Math.log(1 + maxCell);
+      const gamma = dark ? 0.62 : 0.8;
+      const aFloor = dark ? 0.4 : 0.3;
+      for (let i = 0; i < gridArr.length; i++) {
+        const v = gridArr[i];
+        if (v === 0) continue;
+        const t = Math.pow(Math.log(1 + v) / logMax, gamma);
+        const li = Math.min(255, Math.max(0, Math.round(t * 255)));
+        const [r, g, b] = LUT[li];
+        const o = i * 4;
+        data[o] = r;
+        data[o + 1] = g;
+        data[o + 2] = b;
+        data[o + 3] = Math.round(255 * Math.min(1, aFloor + t * 0.8));
+      }
+      bctx.putImageData(img, 0, 0);
+      ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
+      ctx.filter = `blur(${Math.round(CELL / 2.5)}px)`;
+      ctx.drawImage(binCanvas, 0, 0, gw, gh, 0, 0, gw * CELL * dpr, gh * CELL * dpr);
+      ctx.filter = 'none';
+      ctx.globalCompositeOperation = 'source-over';
+      drewPoints = true;
+    }
   }
-  if (maxCell === 0) return;
-
-  const img = bctx.createImageData(gw, gh);
-  const data = img.data;
-  const logMax = Math.log(1 + maxCell);
-  // на тёмной базе — ярче: гамма-буст, выше альфа, аддитивное свечение
-  const dark = theme === 'dark';
-  const gamma = dark ? 0.62 : 0.8;
-  const aFloor = dark ? 0.4 : 0.3;
-  for (let i = 0; i < grid.length; i++) {
-    const v = grid[i];
-    if (v === 0) continue;
-    const t = Math.pow(Math.log(1 + v) / logMax, gamma);
-    const li = Math.min(255, Math.max(0, Math.round(t * 255)));
-    const [r, g, b] = LUT[li];
-    const o = i * 4;
-    data[o] = r;
-    data[o + 1] = g;
-    data[o + 2] = b;
-    data[o + 3] = Math.round(255 * Math.min(1, aFloor + t * 0.8));
-  }
-  bctx.putImageData(img, 0, 0);
-
-  // 3) сглаживание + наложение (на тёмной базе аддитивно)
-  ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
-  ctx.filter = `blur(${Math.round(CELL / 2.5)}px)`;
-  ctx.drawImage(binCanvas, 0, 0, gw, gh, 0, 0, gw * CELL * dpr, gh * CELL * dpr);
-  ctx.filter = 'none';
 }
 
 // ---------- полная геометрия (лениво, только при промахе компактного PIP) ----------
@@ -451,19 +540,45 @@ async function computeUserTags(parts) {
 
 // ---------- статистика / слои ----------
 function recompute() {
+  // стата бандла: статические тоталы по включённым видам спорта (сетка не хранит треки)
   let n = 0;
   let km = 0;
+  if (bundle && bundleActive) {
+    for (const s of SPORTS) {
+      if (!sportsOn.has(s.key)) continue;
+      n += bundle.totals.bySport[s.key].tracks;
+      km += bundle.totals.bySport[s.key].km;
+    }
+  }
+  // пользовательские треки — точные
   const vc = new Map();
   const vr = new Map();
-  for (const t of activeTracks()) {
+  let un = 0;
+  let ukm = 0;
+  for (const t of userTracks) {
     if (!sportsOn.has(t.sport)) continue;
-    n++;
-    km += t.distanceKm;
+    un++;
+    ukm += t.distanceKm;
     for (const iso of t.tags.c) {
       if (iso === RU_ISO) continue;
       vc.set(iso, (vc.get(iso) ?? 0) + 1);
     }
     for (const code of t.tags.r) vr.set(code, (vr.get(code) ?? 0) + 1);
+  }
+  n += un;
+  km += ukm;
+
+  // посещённые страны/регионы бандла: маска спорта пересекается с включёнными
+  const enabledMask = SPORTS.reduce((m, s) => m + (sportsOn.has(s.key) ? SPORT_BIT[s.key] : 0), 0);
+  if (bundle && bundleActive) {
+    for (const [iso, [count, mask]] of Object.entries(bundle.countries)) {
+      if (iso === RU_ISO || (mask & enabledMask) === 0) continue;
+      vc.set(iso, count);
+    }
+    for (const [code, [count, mask]] of Object.entries(bundle.regions)) {
+      if ((mask & enabledMask) === 0) continue;
+      vr.set(code, count);
+    }
   }
   visitedCountries = vc;
   visitedRegions = vr;
@@ -533,29 +648,31 @@ function renderRegions() {
 async function loadData() {
   setStatus('Загружаю данные...');
   try {
-    const [bundleRes, tagsRes, cRes, rRes] = await Promise.all([
+    const [bundleRes, cRes, rRes] = await Promise.all([
       fetch('data/tracks-bundle.json'),
-      fetch('data/track-geo-tags.json'),
       fetch('geo/countries-visited.json'),
       fetch('geo/russia-regions-visited.json'),
     ]);
     if (!bundleRes.ok) throw new Error(String(bundleRes.status));
-    const bundle = await bundleRes.json();
-    const tags = tagsRes.ok ? ((await tagsRes.json()).tracks ?? null) : null;
+    const b = await bundleRes.json();
+    if (b.version !== 2) throw new Error('unsupported bundle version');
+    // раскодировка дельт (ячейки отсортированы по la, lo)
+    const unzigzag = (v) => v % 2 === 0 ? v / 2 : -(v + 1) / 2;
+    for (const g of b.grids) {
+      let la = 0, lo = 0;
+      const c = g.cells;
+      for (let i = 0; i < c.length; i += 3) {
+        la += c[i];
+        lo += unzigzag(c[i + 1]);
+        c[i] = la;
+        c[i + 1] = lo;
+      }
+    }
+    bundle = b;
     const cFC = cRes.ok ? await cRes.json() : { features: [] };
     const rFC = rRes.ok ? await rRes.json() : { features: [] };
 
-    bundleTracks = bundle.tracks.map((t, i) => ({
-      parts: t.parts,
-      distanceKm: t.distanceKm,
-      sport: t.sport ?? 'other',
-      tags:
-        tags && tags[i]
-          ? { c: new Set(tags[i].c), r: new Set(tags[i].r) }
-          : { c: new Set(), r: new Set() },
-    }));
-    recountChips();
-
+    // компактные PIP-индексы — только для классификации пользовательских треков
     countriesIdx = createPipIndex(cFC.features, (p) => p.iso);
     regionsIdx = createPipIndex(rFC.features, (p) => p.code);
     for (const f of cFC.features) {
@@ -564,6 +681,7 @@ async function loadData() {
     for (const f of rFC.features) regionsFeatures.set(f.properties.code, f);
 
     setStatus(null);
+    recountChips();
     recompute();
   } catch {
     setStatus('Данные не найдены — загрузите GPX/FIT вручную ниже.');
@@ -652,7 +770,7 @@ function resetTracks() {
     bundleActive = false;
     userTracks = [];
     el.resetLabel.textContent = 'Вернуть мои треки';
-    setMsg(`Точки сброшены — загрузите GPX/FIT или верните мои ${bundleTracks.length} треков`);
+    setMsg(`Карта пуста — загрузите GPX/FIT или верните исходную карту`);
   } else {
     bundleActive = true;
     el.resetLabel.textContent = 'Сбросить треки';
@@ -688,7 +806,10 @@ function setUploading(b) {
 
 function recountChips() {
   sportCounts = { run: 0, hike: 0, ride: 0, other: 0 };
-  for (const t of activeTracks()) sportCounts[t.sport]++;
+  if (bundle && bundleActive) {
+    for (const s of SPORTS) sportCounts[s.key] = bundle.totals.bySport[s.key].tracks;
+  }
+  for (const t of userTracks) sportCounts[t.sport]++;
   updateChips();
 }
 

@@ -1,0 +1,21 @@
+{
+  "_comment": "Вендорные библиотеки хитмапы. Источники и версии зафиксированы для воспроизводимости; SRI не нужен — same-origin. Пересборка: npx esbuild <entry> --bundle --format=esm --minify --outfile=<file>",
+  "leaflet": {
+    "package": "leaflet",
+    "version": "1.9.4",
+    "source": "https://www.npmjs.com/package/leaflet/v/1.9.4",
+    "entry": "node_modules/leaflet/dist/leaflet-src.esm.js",
+    "files": {
+      "leaflet.js": "e22a828370b36169525de9b4c03afca99fd43560447d46ae1336a4b8f6ee2e76"
+    }
+  },
+  "fit-file-parser": {
+    "package": "fit-file-parser",
+    "version": "6.2.3",
+    "source": "https://www.npmjs.com/package/fit-file-parser",
+    "entry": "import FitParser from 'fit-file-parser'; export default FitParser;",
+    "files": {
+      "fit-parser.js": "072139b7752e688a9c9607ae418e7c472a3fd391ff3de8060c3316243cd8b047"
+    }
+  }
+}

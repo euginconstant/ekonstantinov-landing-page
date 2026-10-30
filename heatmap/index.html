@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' https://server.arcgisonline.com data:; connect-src 'self'; base-uri 'self'; object-src 'none'">
 <meta name="robots" content="noindex">
@@ -25,45 +25,52 @@
 </a>
 
 <aside id="panel">
-  <h1 class="panel__title">
-    <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="0" width="4" height="1"/><rect x="1" y="1" width="1" height="2"/><rect x="6" y="1" width="1" height="2"/><rect x="2" y="3" width="4" height="1"/><rect x="3" y="4" width="2" height="2"/><rect x="4" y="6" width="1" height="1"/></svg>
-    Карта путешествий
-  </h1>
-
-  <div id="status" class="status" hidden></div>
-
-  <div class="stats">
-    <div class="stat"><b id="st-tracks">0</b><span>треков</span></div>
-    <div class="stat"><b id="st-km">0</b><span>км</span></div>
-    <div class="stat"><b id="st-countries">0</b><span>стран</span></div>
-    <div class="stat"><b id="st-regions">0</b><span>регионов РФ</span></div>
-  </div>
-
-  <div class="label">Виды спорта</div>
-  <div id="sports" class="chips">
-    <button type="button" class="chip" data-sport="run" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="0" width="2" height="4"/><rect x="1" y="4" width="1" height="1"/><rect x="5" y="3" width="2" height="4"/><rect x="6" y="7" width="1" height="1"/></svg>Бег <i>0</i></button>
-    <button type="button" class="chip" data-sport="hike" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="3" height="1"/><rect x="2" y="4" width="5" height="1"/><rect x="1" y="5" width="7" height="1"/><rect x="0" y="6" width="8" height="1"/><rect x="0" y="7" width="8" height="1"/></svg>Пешие <i>0</i></button>
-    <button type="button" class="chip" data-sport="ride" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="5" width="3" height="1"/><rect x="0" y="7" width="3" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="5" y="5" width="3" height="1"/><rect x="5" y="7" width="3" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="3" y="6" width="2" height="1"/><rect x="3" y="3" width="2" height="1"/><rect x="3" y="4" width="1" height="2"/></svg>Вело <i>0</i></button>
-    <button type="button" class="chip" data-sport="other" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="2" width="2" height="4"/><rect x="6" y="2" width="2" height="4"/><rect x="2" y="3" width="4" height="2"/></svg>Другое <i>0</i></button>
-  </div>
-
-  <label class="tog"><span>Страны</span><input type="checkbox" id="tog-countries" checked><i aria-hidden="true"></i></label>
-  <label class="tog"><span>Регионы России</span><input type="checkbox" id="tog-regions" checked><i aria-hidden="true"></i></label>
-  <label class="tog"><span>Тёмная база</span><input type="checkbox" id="tog-dark" checked><i aria-hidden="true"></i></label>
-
-  <div class="btns">
-    <label class="btn">
-      <input type="file" id="file" multiple accept=".gpx,.fit,.fit.gz,.gz" hidden>
-      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="0" width="2" height="1"/><rect x="3" y="1" width="2" height="1"/><rect x="3" y="2" width="2" height="1"/><rect x="3" y="3" width="2" height="1"/><rect x="1" y="4" width="6" height="1"/><rect x="3" y="5" width="2" height="1"/><rect x="3" y="6" width="2" height="1"/><rect x="3" y="7" width="2" height="1"/></svg>
-      <span id="upload-text">Загрузить GPX / FIT</span>
-    </label>
-    <button type="button" class="btn ghost" id="reset">
-      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="0" width="8" height="1"/><rect x="0" y="7" width="8" height="1"/><rect x="0" y="1" width="1" height="6"/><rect x="7" y="1" width="1" height="6"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/></svg>
-      <span id="reset-label">Сбросить треки</span>
+  <div class="panel__bar">
+    <h1 class="panel__title">
+      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="2" y="0" width="4" height="1"/><rect x="1" y="1" width="1" height="2"/><rect x="6" y="1" width="1" height="2"/><rect x="2" y="3" width="4" height="1"/><rect x="3" y="4" width="2" height="2"/><rect x="4" y="6" width="1" height="1"/></svg>
+      Карта путешествий
+    </h1>
+    <button type="button" id="panel-toggle" aria-expanded="true" aria-controls="panel-body" aria-label="Свернуть или развернуть панель">
+      <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="5" width="1" height="1"/><rect x="1" y="4" width="1" height="1"/><rect x="2" y="3" width="1" height="1"/><rect x="3" y="2" width="2" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="4" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/></svg>
     </button>
   </div>
 
-  <div id="msg" class="msg" hidden></div>
+  <div id="panel-body">
+    <div id="status" class="status" hidden></div>
+
+    <div class="stats">
+      <div class="stat"><b id="st-tracks">0</b><span>треков</span></div>
+      <div class="stat"><b id="st-km">0</b><span>км</span></div>
+      <div class="stat"><b id="st-countries">0</b><span>стран</span></div>
+      <div class="stat"><b id="st-regions">0</b><span>регионов РФ</span></div>
+    </div>
+
+    <div class="label">Виды спорта</div>
+    <div id="sports" class="chips">
+      <button type="button" class="chip" data-sport="run" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="1" y="0" width="2" height="4"/><rect x="1" y="4" width="1" height="1"/><rect x="5" y="3" width="2" height="4"/><rect x="6" y="7" width="1" height="1"/></svg>Бег <i>0</i></button>
+      <button type="button" class="chip" data-sport="hike" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="4" y="2" width="1" height="1"/><rect x="3" y="3" width="3" height="1"/><rect x="2" y="4" width="5" height="1"/><rect x="1" y="5" width="7" height="1"/><rect x="0" y="6" width="8" height="1"/><rect x="0" y="7" width="8" height="1"/></svg>Пешие <i>0</i></button>
+      <button type="button" class="chip" data-sport="ride" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="5" width="3" height="1"/><rect x="0" y="7" width="3" height="1"/><rect x="0" y="6" width="1" height="1"/><rect x="2" y="6" width="1" height="1"/><rect x="5" y="5" width="3" height="1"/><rect x="5" y="7" width="3" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="3" y="6" width="2" height="1"/><rect x="3" y="3" width="2" height="1"/><rect x="3" y="4" width="1" height="2"/></svg>Вело <i>0</i></button>
+      <button type="button" class="chip" data-sport="other" aria-pressed="true"><svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="2" width="2" height="4"/><rect x="6" y="2" width="2" height="4"/><rect x="2" y="3" width="4" height="2"/></svg>Другое <i>0</i></button>
+    </div>
+
+    <label class="tog"><span>Страны</span><input type="checkbox" id="tog-countries" checked><i aria-hidden="true"></i></label>
+    <label class="tog"><span>Регионы России</span><input type="checkbox" id="tog-regions" checked><i aria-hidden="true"></i></label>
+    <label class="tog"><span>Тёмная база</span><input type="checkbox" id="tog-dark" checked><i aria-hidden="true"></i></label>
+
+    <div class="btns">
+      <label class="btn">
+        <input type="file" id="file" multiple accept=".gpx,.fit,.fit.gz,.gz" hidden>
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="3" y="0" width="2" height="1"/><rect x="3" y="1" width="2" height="1"/><rect x="3" y="2" width="2" height="1"/><rect x="3" y="3" width="2" height="1"/><rect x="1" y="4" width="6" height="1"/><rect x="3" y="5" width="2" height="1"/><rect x="3" y="6" width="2" height="1"/><rect x="3" y="7" width="2" height="1"/></svg>
+        <span id="upload-text">Загрузить GPX / FIT</span>
+      </label>
+      <button type="button" class="btn ghost" id="reset">
+        <svg viewBox="0 0 8 8" shape-rendering="crispEdges" aria-hidden="true"><rect x="0" y="0" width="8" height="1"/><rect x="0" y="7" width="8" height="1"/><rect x="0" y="1" width="1" height="6"/><rect x="7" y="1" width="1" height="6"/><rect x="2" y="2" width="1" height="1"/><rect x="3" y="3" width="1" height="1"/><rect x="4" y="4" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="2" y="5" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="2" width="1" height="1"/></svg>
+        <span id="reset-label">Сбросить треки</span>
+      </button>
+    </div>
+
+    <div id="msg" class="msg" hidden></div>
+  </div>
 </aside>
 
 <script type="module" src="heatmap.js"></script>

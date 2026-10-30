@@ -63,11 +63,45 @@ const LUT = (() => {
   return out;
 })();
 
+// ctx.filter не поддерживается в iOS Safari < 18 — там blur даём даунскейлом/апскейлом
+const SUPPORTS_CTX_FILTER = (() => {
+  const c = document.createElement('canvas').getContext('2d');
+  if (!c) return false;
+  c.filter = 'blur(2px)';
+  return c.filter !== 'none';
+})();
+let blurCanvas = null;
+
+/** drawImage с размытием: ctx.filter, а где его нет — двухпроходное сжатие. */
+function drawBlurred(ctx, src, sw, sh, dx, dy, dw, dh, blurPx) {
+  if (SUPPORTS_CTX_FILTER) {
+    ctx.filter = `blur(${blurPx}px)`;
+    ctx.drawImage(src, 0, 0, sw, sh, dx, dy, dw, dh);
+    ctx.filter = 'none';
+    return;
+  }
+  const k = Math.max(1, Math.round(blurPx));
+  const tw = Math.max(1, Math.round(sw / k));
+  const th = Math.max(1, Math.round(sh / k));
+  if (!blurCanvas) blurCanvas = document.createElement('canvas');
+  if (blurCanvas.width !== tw || blurCanvas.height !== th) {
+    blurCanvas.width = tw;
+    blurCanvas.height = th;
+  }
+  const bc = blurCanvas.getContext('2d');
+  bc.clearRect(0, 0, tw, th);
+  bc.imageSmoothingEnabled = true;
+  bc.drawImage(src, 0, 0, sw, sh, 0, 0, tw, th);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(blurCanvas, 0, 0, tw, th, dx, dy, dw, dh);
+}
+
 // ---------- состояние ----------
 let map = null;
 let tileLayer = null;
 let countriesLayer = null;
 let regionsLayer = null;
+let vectorRenderer = null; // свой canvas-рендерер заливок: подрисовывается при драге
 let heatCanvas = null;
 let binCanvas = null;
 let rafId = 0;
@@ -290,12 +324,15 @@ function drawGridLayer() {
   gctx.clearRect(0, 0, bw, bh);
 
   const cell = grid.cell;
+  // канва выступает на MARGIN px за вьюпорт и перерисовывается по rAF: берём ячейки
+  // с запасом на весь холст, иначе при перетаскивании у ведущей кромки видна пустая полоса
+  const pxPerDeg = (256 * Math.pow(2, map.getZoom())) / 360;
+  const padDeg = cell + MARGIN / pxPerDeg;
   const bounds = map.getBounds();
-  const pad = cell;
-  const laMin = Math.floor((bounds.getSouth() - pad) / cell);
-  const laMax = Math.ceil((bounds.getNorth() + pad) / cell);
-  const loMin = Math.floor((bounds.getWest() - pad) / cell);
-  const loMax = Math.ceil((bounds.getEast() + pad) / cell);
+  const laMin = Math.floor((bounds.getSouth() - padDeg) / cell);
+  const laMax = Math.ceil((bounds.getNorth() + padDeg) / cell);
+  const loMin = Math.floor((bounds.getWest() - padDeg) / cell);
+  const loMax = Math.ceil((bounds.getEast() + padDeg) / cell);
 
   const cells = grid.cells;
   for (let i = 0; i < cells.length; i += 3) {
@@ -356,9 +393,7 @@ function redrawHeat() {
   const gridLayer = bundleActive ? drawGridLayer() : null;
   if (gridLayer) {
     ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
-    ctx.filter = `blur(${gridLayer.blurPx}px)`;
-    ctx.drawImage(gridLayer.canvas, 0, 0);
-    ctx.filter = 'none';
+    drawBlurred(ctx, gridLayer.canvas, heatCanvas.width, heatCanvas.height, 0, 0, heatCanvas.width, heatCanvas.height, gridLayer.blurPx);
     ctx.globalCompositeOperation = 'source-over';
   }
 
@@ -428,9 +463,7 @@ function redrawHeat() {
       }
       bctx.putImageData(img, 0, 0);
       ctx.globalCompositeOperation = dark ? 'lighter' : 'source-over';
-      ctx.filter = `blur(${Math.round(CELL / 2.5)}px)`;
-      ctx.drawImage(binCanvas, 0, 0, gw, gh, 0, 0, gw * CELL * dpr, gh * CELL * dpr);
-      ctx.filter = 'none';
+      drawBlurred(ctx, binCanvas, gw, gh, 0, 0, gw * CELL * dpr, gh * CELL * dpr, Math.max(1, Math.round(CELL / 2.5)));
       ctx.globalCompositeOperation = 'source-over';
       drewPoints = true;
     }
@@ -601,7 +634,7 @@ function addShiftedPolys(layer, feature, label, style) {
   for (const rings of polys) {
     for (const shift of SHIFTS) {
       const latlngs = rings.map((ring) => ring.map(([lon, lat]) => [lat, lon + shift]));
-      L.polygon(latlngs, { ...style, interactive: true })
+      L.polygon(latlngs, { ...style, renderer: vectorRenderer, interactive: true })
         .bindTooltip(label, { sticky: true })
         .addTo(layer);
     }
@@ -684,6 +717,7 @@ async function loadData() {
     recountChips();
     recompute();
   } catch {
+    setPanelCollapsed(false); // на телефоне панель свёрнута — раскрываем ради сообщения
     setStatus('Данные не найдены — загрузите GPX/FIT вручную ниже.');
   }
 }
@@ -781,6 +815,14 @@ function resetTracks() {
 }
 
 // ---------- UI ----------
+// на телефоне панель — bottom sheet: по умолчанию свёрнута в строку заголовка
+const mobileMq = window.matchMedia('(max-width: 640px)');
+
+function setPanelCollapsed(collapsed) {
+  el.panel.classList.toggle('collapsed', collapsed);
+  el.panelToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+}
+
 function setStatus(text) {
   if (text) {
     el.status.textContent = text;
@@ -849,6 +891,9 @@ function bindUI() {
     el.file.value = ''; // тот же файл можно выбрать повторно
   });
   el.reset.addEventListener('click', resetTracks);
+  el.panelToggle.addEventListener('click', () => {
+    setPanelCollapsed(!el.panel.classList.contains('collapsed'));
+  });
 }
 
 // ---------- инициализация ----------
@@ -860,7 +905,9 @@ function initMap() {
     maxZoom: MAX_ZOOM,
     worldCopyJump: false,
     preferCanvas: true,
+    zoomControl: false, // свой контрол внизу слева: не конфликтует с брендом сверху
   });
+  L.control.zoom({ position: 'bottomleft' }).addTo(map);
   tileLayer = L.tileLayer(TILE_URLS[theme], {
     attribution: TILE_ATTR,
     maxZoom: MAX_ZOOM,
@@ -880,6 +927,9 @@ function initMap() {
   pane.appendChild(heatCanvas);
   binCanvas = document.createElement('canvas');
 
+  // свой рендерер заливок: L.Canvas обновляет буфер только на moveend, из-за чего
+  // при перетаскивании заливки стран исчезали; запас 0.3 + подрисовка на ходу (ниже)
+  vectorRenderer = L.canvas({ padding: 0.3 });
   countriesLayer = L.layerGroup().addTo(map);
   regionsLayer = L.layerGroup().addTo(map);
 
@@ -887,11 +937,27 @@ function initMap() {
     if (rafId) return;
     rafId = requestAnimationFrame(() => {
       rafId = 0;
+      if (vectorRenderer && vectorRenderer._container) vectorRenderer._update();
       redrawHeat();
     });
   };
   // канва едет вместе с картой, сетка перестраивается по завершении движения
   map.on('moveend zoomend viewreset resize', scheduleRedraw);
+  // во время зум-анимации/пинча канву ведёт transform — перерисовка сломала бы масштаб
+  let zooming = false;
+  map.on('zoomstart', () => { zooming = true; });
+  map.on('zoomend', () => { zooming = false; scheduleRedraw(); });
+  // при перетаскивании сетку подрисовываем на ходу (не чаще ~8 fps), иначе у ведущей
+  // кромки видна пустая полоса до moveend — на телефоне это заметно на каждом жесте
+  const MOVE_REDRAW_MS = 120;
+  let lastMoveDraw = 0;
+  map.on('move', () => {
+    if (zooming || rafId) return;
+    const now = performance.now();
+    if (now - lastMoveDraw < MOVE_REDRAW_MS) return;
+    lastMoveDraw = now;
+    scheduleRedraw();
+  });
   // во время зум-анимации канва следует за картой масштабированием (как у L.Renderer)
   map.on('zoomanim', (e) => {
     if (!heatCanvas) return;
@@ -906,6 +972,8 @@ function initMap() {
 function init() {
   el.status = $('status');
   el.msg = $('msg');
+  el.panel = $('panel');
+  el.panelToggle = $('panel-toggle');
   el.stTracks = $('st-tracks');
   el.stKm = $('st-km');
   el.stCountries = $('st-countries');
@@ -921,6 +989,12 @@ function init() {
 
   initMap();
   bindUI();
+  setPanelCollapsed(mobileMq.matches); // на телефоне панель свёрнута, на десктопе раскрыта
+  if (mobileMq.addEventListener) {
+    mobileMq.addEventListener('change', (e) => setPanelCollapsed(e.matches));
+  } else {
+    mobileMq.addListener((e) => setPanelCollapsed(e.matches)); // старые Safari
+  }
   updateChips();
   void loadData();
 }

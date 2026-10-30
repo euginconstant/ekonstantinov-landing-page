@@ -419,6 +419,42 @@ function keepVisitedParts(feature, trackObjs) {
   };
 }
 
+// 'дыры-артефакты': внутренние кольца, не занятые другим регионом/страной
+// (например, несуществующий анклав Звенигорода у Московской области),
+// заливаются — анклавы реальных регионов (Адыгея в Краснодарском крае)
+// остаются дырами, их рисует свой полигон
+// PIP по финальным visited-полигонам — строится после формирования FC ниже
+function dropUnclaimedHoles(feature, visitedIdx) {
+  const polys = feature.geometry.type === 'MultiPolygon' ? feature.geometry.coordinates : [feature.geometry.coordinates];
+  let changed = false;
+  const newPolys = polys.map((rings) => {
+    if (rings.length === 1) return rings;
+    const kept = [rings[0]];
+    for (let h = 1; h < rings.length; h++) {
+      let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+      for (const [lon, lat] of rings[h]) {
+        if (lat < minLat) minLat = lat;
+        if (lat > maxLat) maxLat = lat;
+        if (lon < minLon) minLon = lon;
+        if (lon > maxLon) maxLon = lon;
+      }
+      const cLat = (minLat + maxLat) / 2, cLon = (minLon + maxLon) / 2;
+      // at() вернёт владельца, только если его visited-полигон реально накрывает
+      // центр дыры (bbox + inRing + без его собственных дыр)
+      if (visitedIdx.at(cLat, cLon)) kept.push(rings[h]);
+      else changed = true;
+    }
+    return kept;
+  });
+  if (!changed) return feature;
+  return {
+    ...feature,
+    geometry: newPolys.length === 1
+      ? { type: 'Polygon', coordinates: newPolys[0] }
+      : { type: 'MultiPolygon', coordinates: newPolys },
+  };
+}
+
 const countriesVisitedFC = {
   type: 'FeatureCollection',
   features: countriesFC.features
@@ -434,6 +470,15 @@ const regionsVisitedFC = {
     .map((f) => keepVisitedParts(f, visitedRegions.get(f.properties.code)?.tracks)),
 };
 
+// залить дыры, не покрытые финальными visited-полигонами (владелец дыры
+// непосещён или его часть вырезана keepVisitedParts — иначе тёмный анклав)
+const fillHoles = (fc, keyOf) => {
+  const idx = createPipIndex(fc.features, keyOf);
+  return { type: 'FeatureCollection', features: fc.features.map((f) => dropUnclaimedHoles(f, idx)) };
+};
+const countriesVisitedFC2 = fillHoles(countriesVisitedFC, (p) => p.iso);
+const regionsVisitedFC2 = fillHoles(regionsVisitedFC, (p) => p.code);
+
 const bundle = {
   version: 2,
   generated: new Date().toISOString(),
@@ -445,8 +490,8 @@ const bundle = {
 await mkdir(join(OUT, 'data'), { recursive: true });
 await mkdir(join(OUT, 'geo/full'), { recursive: true });
 await writeFile(join(OUT, 'data/tracks-bundle.json'), JSON.stringify(bundle));
-await writeFile(join(OUT, 'geo/countries-visited.json'), JSON.stringify(countriesVisitedFC));
-await writeFile(join(OUT, 'geo/russia-regions-visited.json'), JSON.stringify(regionsVisitedFC));
+await writeFile(join(OUT, 'geo/countries-visited.json'), JSON.stringify(countriesVisitedFC2));
+await writeFile(join(OUT, 'geo/russia-regions-visited.json'), JSON.stringify(regionsVisitedFC2));
 await rm(join(OUT, 'data/track-geo-tags.json'), { force: true });
 
 const { gzipSync } = await import('node:zlib');

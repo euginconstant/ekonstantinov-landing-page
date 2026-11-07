@@ -9,9 +9,13 @@
 //   вид спорта определяется на лету (FIT sessions sport / GPX <type>), иначе «Другое»;
 //   свои треки рендерятся точно (они не покидают браузер);
 // - кнопка «Сбросить треки» возвращает исходную сетку;
-// - по умолчанию включены страны, регионы и тёмная база.
+// - по умолчанию включены страны, регионы и тёмная база;
+// - «Поделиться»: своя версия карты кодируется в URL (СС64, share-codes.js,
+//   параметры w1/r1) — при загрузке GPX/FIT адрес обновляется сам, а открытие
+//   такой ссылки рисует карту по коду (полная геометрия, без бандла сайта).
 
 import * as L from './vendor/leaflet.js';
+import { WORLD_SCHEME, RF_SCHEME, encodeCode, decodeCode } from './share-codes.js';
 
 const SHIFTS = [-720, -360, 0, 360, 720]; // копии мира для антимеридиана
 const MAX_ZOOM = 11; // максимум зума карты
@@ -123,6 +127,11 @@ let theme = 'dark'; // тумблер «Тёмная база» включён �
 
 let visitedCountries = new Map(); // iso -> число треков
 let visitedRegions = new Map(); // code -> число треков
+
+// режим «карта из ссылки»: urlBase — декодированные w1/r1 (или null — обычный
+// режим), codeBaseOn — аналогично bundleActive: сброс прячет базу из ссылки
+let urlBase = null;
+let codeBaseOn = true;
 
 // геометрия: компактные наборы (посещённое) + полные (догружаются при промахе)
 let countriesIdx = null; // PIP: посещённые страны + РФ
@@ -572,6 +581,24 @@ async function computeUserTags(parts) {
 }
 
 // ---------- статистика / слои ----------
+/** Посещённое в бандле с учётом включённых видов спорта: {vc: iso→n, vr: code→n}. */
+function bundleVisited() {
+  const vc = new Map();
+  const vr = new Map();
+  if (bundle && bundleActive) {
+    const enabledMask = SPORTS.reduce((m, s) => m + (sportsOn.has(s.key) ? SPORT_BIT[s.key] : 0), 0);
+    for (const [iso, [count, mask]] of Object.entries(bundle.countries)) {
+      if (iso === RU_ISO || (mask & enabledMask) === 0) continue;
+      vc.set(iso, count);
+    }
+    for (const [code, [count, mask]] of Object.entries(bundle.regions)) {
+      if ((mask & enabledMask) === 0) continue;
+      vr.set(code, count);
+    }
+  }
+  return { vc, vr };
+}
+
 function recompute() {
   // стата бандла: статические тоталы по включённым видам спорта (сетка не хранит треки)
   let n = 0;
@@ -602,15 +629,19 @@ function recompute() {
   km += ukm;
 
   // посещённые страны/регионы бандла: маска спорта пересекается с включёнными
-  const enabledMask = SPORTS.reduce((m, s) => m + (sportsOn.has(s.key) ? SPORT_BIT[s.key] : 0), 0);
-  if (bundle && bundleActive) {
-    for (const [iso, [count, mask]] of Object.entries(bundle.countries)) {
-      if (iso === RU_ISO || (mask & enabledMask) === 0) continue;
-      vc.set(iso, count);
+  const bv = bundleVisited();
+  for (const [iso, count] of bv.vc) vc.set(iso, count);
+  for (const [code, count] of bv.vr) vr.set(code, count);
+
+  // база из ссылки: объекты кода считаются посещёнными (счётчик 0 — точности
+  // в коде нет, в подсказке рисуем только название); Россия рисуется регионами
+  if (urlBase && codeBaseOn) {
+    for (const iso of urlBase.countries) {
+      if (iso === RU_ISO || vc.has(iso)) continue;
+      vc.set(iso, 0);
     }
-    for (const [code, [count, mask]] of Object.entries(bundle.regions)) {
-      if ((mask & enabledMask) === 0) continue;
-      vr.set(code, count);
+    for (const code of urlBase.regions) {
+      if (!vr.has(code)) vr.set(code, 0);
     }
   }
   visitedCountries = vc;
@@ -655,7 +686,13 @@ function renderCountries() {
   for (const [iso, n] of visitedCountries) {
     const f = countryFeature(iso);
     if (!f) continue;
-    addShiftedPolys(countriesLayer, f, `${f.properties.name ?? iso} · ${tracksPlural(n)}`, style);
+    // n === 0 — объект из кода ссылки: точного счётчика нет, только название
+    addShiftedPolys(
+      countriesLayer,
+      f,
+      n > 0 ? `${f.properties.name ?? iso} · ${tracksPlural(n)}` : `${f.properties.name ?? iso}`,
+      style,
+    );
   }
 }
 
@@ -673,7 +710,12 @@ function renderRegions() {
   for (const [code, n] of visitedRegions) {
     const f = regionsFeatures.get(code);
     if (!f) continue;
-    addShiftedPolys(regionsLayer, f, `${f.properties.ru ?? code} · ${tracksPlural(n)}`, style);
+    addShiftedPolys(
+      regionsLayer,
+      f,
+      n > 0 ? `${f.properties.ru ?? code} · ${tracksPlural(n)}` : `${f.properties.ru ?? code}`,
+      style,
+    );
   }
 }
 
@@ -719,6 +761,157 @@ async function loadData() {
   } catch {
     setPanelCollapsed(false); // на телефоне панель свёрнута — раскрываем ради сообщения
     setStatus('Данные не найдены — загрузите GPX/FIT вручную ниже.');
+  }
+}
+
+// ---------- код карты в ссылке (share-codes.js) ----------
+/**
+ * Разбор параметров w1/r1 из адреса. null — кода нет; иначе {countries,
+ * regions, invalid} — декодированные наборы и флаг повреждённого кода.
+ */
+function parseShareUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const w = (params.get(WORLD_SCHEME.id) ?? '').trim();
+  const r = (params.get(RF_SCHEME.id) ?? '').trim();
+  if (!w && !r) return null;
+  let invalid = false;
+  let countries = new Set();
+  let regions = new Set();
+  if (w) {
+    try {
+      countries = decodeCode(WORLD_SCHEME, w);
+    } catch {
+      invalid = true;
+    }
+  }
+  if (r) {
+    try {
+      regions = decodeCode(RF_SCHEME, r);
+    } catch {
+      invalid = true;
+    }
+  }
+  return { countries, regions, invalid };
+}
+
+/**
+ * Своя версия карты для ссылки: база из ссылки (если есть) + посещённое на
+ * загруженных треках с включёнными видами спорта. Бандл сайта сюда не входит —
+ * в URL кодируется именно карта посетителя.
+ */
+function customVisited() {
+  const c = new Set();
+  const r = new Set();
+  if (urlBase) {
+    for (const iso of urlBase.countries) c.add(iso);
+    for (const code of urlBase.regions) r.add(code);
+  }
+  for (const t of userTracks) {
+    if (!sportsOn.has(t.sport)) continue;
+    for (const iso of t.tags.c) c.add(iso);
+    for (const code of t.tags.r) r.add(code);
+  }
+  return { c, r };
+}
+
+/** Сохранить свою карту в адресе (replaceState): параметры w1/r1. */
+function syncUrl() {
+  const { c, r } = customVisited();
+  const params = new URLSearchParams(window.location.search);
+  if (urlBase || c.size > 0 || r.size > 0) {
+    params.set(WORLD_SCHEME.id, encodeCode(WORLD_SCHEME, c));
+    params.set(RF_SCHEME.id, encodeCode(RF_SCHEME, r));
+  } else {
+    params.delete(WORLD_SCHEME.id);
+    params.delete(RF_SCHEME.id);
+  }
+  const q = params.toString();
+  window.history.replaceState(
+    null,
+    '',
+    `${window.location.pathname}${q ? `?${q}` : ''}${window.location.hash}`,
+  );
+}
+
+/** «Поделиться»: код текущей карты (бандл + своя) → ссылка в буфер обмена. */
+async function shareMap() {
+  const { c, r } = customVisited();
+  const bv = bundleVisited();
+  for (const iso of bv.vc.keys()) c.add(iso);
+  for (const code of bv.vr.keys()) r.add(code);
+  const w = encodeCode(WORLD_SCHEME, c);
+  const rf = encodeCode(RF_SCHEME, r);
+  const params = new URLSearchParams();
+  if (w !== '0' || rf !== '0') {
+    params.set(WORLD_SCHEME.id, w);
+    params.set(RF_SCHEME.id, rf);
+  }
+  const q = params.toString();
+  const url = `${window.location.origin}${window.location.pathname}${q ? `?${q}` : ''}`;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(url);
+    } else {
+      const ta = document.createElement('textarea'); // старые браузеры / http
+      ta.value = url;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    setMsg('Ссылка на карту скопирована');
+  } catch {
+    setMsg('Не удалось скопировать ссылку');
+  }
+}
+
+/**
+ * Режим «карта из ссылки»: бандл не нужен — грузим полную геометрию, она нужна
+ * и для отрисовки произвольных стран/регионов из кода, и для PIP-классификации
+ * пользовательских треков (компактные наборы знают только посещённое мной).
+ */
+async function loadSharedData() {
+  setStatus('Загружаю карту из ссылки...');
+  try {
+    const [cRes, rRes] = await Promise.all([
+      fetch('geo/full/countries-50m.json'),
+      fetch('geo/full/russia-regions.json'),
+    ]);
+    if (!cRes.ok || !rRes.ok) throw new Error('geo fetch failed');
+    const cFC = await cRes.json();
+    const rFC = await rRes.json();
+
+    // полные индексы сразу помечаем загруженными: догрузка в computeUserTags не понадобится
+    countriesIdx = createPipIndex(cFC.features, (p) => p.iso);
+    regionsIdx = createPipIndex(rFC.features, (p) => p.code);
+    fullCountriesFC = cFC;
+    fullCountriesIdx = countriesIdx;
+    fullRegionsIdx = regionsIdx;
+    // «первый по списку» — основная геометрия (в full бывают дубли iso, например AU)
+    for (const f of cFC.features) {
+      if (f.properties.iso !== RU_ISO && !countriesFeatures.has(f.properties.iso)) {
+        countriesFeatures.set(f.properties.iso, f);
+      }
+    }
+    for (const f of rFC.features) {
+      if (!regionsFeatures.has(f.properties.code)) regionsFeatures.set(f.properties.code, f);
+    }
+
+    setStatus(null);
+    recountChips();
+    recompute();
+    syncUrl(); // канонизируем код в адресе; повреждённая часть отсеется
+    setMsg(
+      urlBase && urlBase.invalid
+        ? 'Код в ссылке повреждён — показал, что смог разобрать'
+        : 'Показана карта из ссылки — загрузите GPX/FIT, чтобы дополнить её',
+    );
+  } catch {
+    setPanelCollapsed(false); // на телефоне панель свёрнута — раскрываем ради сообщения
+    setStatus('Не удалось загрузить геометрию для карты из ссылки.');
   }
 }
 
@@ -797,10 +990,23 @@ async function onFiles(files) {
   recountChips();
   setUploading(false);
   recompute();
+  syncUrl(); // результат загрузки — сразу в адрес: карта сохранена и готова к шэрингу
 }
 
 function resetTracks() {
-  if (bundleActive) {
+  if (urlBase) {
+    // режим ссылки: «исходная карта» — та, что в коде; сброс прячет её и треки
+    if (codeBaseOn) {
+      codeBaseOn = false;
+      userTracks = [];
+      el.resetLabel.textContent = 'Вернуть карту из ссылки';
+      setMsg('Карта пуста — загрузите GPX/FIT или верните карту из ссылки');
+    } else {
+      codeBaseOn = true;
+      el.resetLabel.textContent = 'Сбросить треки';
+      setMsg(null);
+    }
+  } else if (bundleActive) {
     bundleActive = false;
     userTracks = [];
     el.resetLabel.textContent = 'Вернуть мои треки';
@@ -812,6 +1018,7 @@ function resetTracks() {
   }
   recountChips();
   recompute();
+  syncUrl();
 }
 
 // ---------- UI ----------
@@ -891,6 +1098,9 @@ function bindUI() {
     el.file.value = ''; // тот же файл можно выбрать повторно
   });
   el.reset.addEventListener('click', resetTracks);
+  el.share.addEventListener('click', () => {
+    void shareMap();
+  });
   el.panelToggle.addEventListener('click', () => {
     setPanelCollapsed(!el.panel.classList.contains('collapsed'));
   });
@@ -986,6 +1196,7 @@ function init() {
   el.uploadText = $('upload-text');
   el.reset = $('reset');
   el.resetLabel = $('reset-label');
+  el.share = $('share');
 
   initMap();
   bindUI();
@@ -996,7 +1207,17 @@ function init() {
     mobileMq.addListener((e) => setPanelCollapsed(e.matches)); // старые Safari
   }
   updateChips();
-  void loadData();
+
+  // код в ссылке? рисуем карту по нему (полная геометрия, без бандла сайта);
+  // тогглы стран и регионов остаются включёнными по умолчанию
+  const parsed = parseShareUrl();
+  if (parsed && (parsed.countries.size > 0 || parsed.regions.size > 0)) {
+    urlBase = parsed;
+    void loadSharedData();
+  } else {
+    if (parsed) setMsg('Код карты в ссылке повреждён — показываю исходную карту');
+    void loadData();
+  }
 }
 
 init();
